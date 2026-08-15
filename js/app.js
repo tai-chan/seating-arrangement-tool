@@ -80,14 +80,61 @@ window.SeatApp = window.SeatApp || {};
     canvas.requestRenderAll();
   }
 
-  function promptRenameLabel(canvas, table) {
+  // Renames a table's alphabet label with a small input positioned right
+  // over it, instead of window.prompt() -- some browsers (in-app webviews,
+  // certain embedded/kiosk contexts) silently suppress synchronous dialogs,
+  // which would make double-click rename look broken with no error at all.
+  function startInlineRename(canvas, table) {
     var labelObj = table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
     if (!labelObj) return;
-    var next = window.prompt('ラベルを入力してください', labelObj.text);
-    if (next === null) return;
-    labelObj.set('text', next);
-    canvas.requestRenderAll();
-    pushHistory(canvas);
+    var existing = document.querySelector('.inline-rename-input');
+    if (existing) existing.remove();
+
+    var center = table.getCenterPoint();
+    var zoom = canvas.getZoom();
+    var bbox = canvas.getElement().getBoundingClientRect();
+    var screenX = bbox.left + center.x * zoom;
+    var screenY = bbox.top + center.y * zoom;
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'inline-rename-input';
+    input.maxLength = 6;
+    input.value = labelObj.text;
+    input.style.left = screenX + 'px';
+    input.style.top = screenY + 'px';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+
+    var done = false;
+    function commit() {
+      if (done) return;
+      done = true;
+      var next = input.value.trim();
+      if (next && next !== labelObj.text) {
+        labelObj.set('text', next);
+        canvas.requestRenderAll();
+        pushHistory(canvas);
+      }
+      cleanup();
+    }
+    function cancel() {
+      if (done) return;
+      done = true;
+      cleanup();
+    }
+    function cleanup() {
+      input.removeEventListener('keydown', onKeydown);
+      input.removeEventListener('blur', commit);
+      if (input.parentNode) input.parentNode.removeChild(input);
+    }
+    function onKeydown(e) {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    }
+    input.addEventListener('keydown', onKeydown);
+    input.addEventListener('blur', commit);
   }
 
   // ---- Undo history ----
@@ -161,7 +208,10 @@ window.SeatApp = window.SeatApp || {};
     var now = Date.now();
     if (lastClickTarget === target && (now - lastClickTime) < DOUBLE_CLICK_MS) {
       lastClickTarget = null;
-      promptRenameLabel(canvas, target);
+      // Deferred: the browser's own post-mousedown focus handling (focusing
+      // the clicked canvas) runs right after this handler returns and would
+      // otherwise blur-and-close an input created synchronously here.
+      setTimeout(function () { startInlineRename(canvas, target); }, 0);
     } else {
       lastClickTarget = target;
       lastClickTime = now;

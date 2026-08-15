@@ -146,8 +146,14 @@ window.SeatApp = window.SeatApp || {};
 
     var footprint = deskFootprint(deskSpec);
     var cellSize = Math.max(CELL_BASE, footprint + CELL_PADDING);
-    var mcClearanceY = SCREEN_TOP_Y + MC_OFFSET_Y + MC_DESK_OFFSET_Y + 50;
-    var gridTop = Math.max(GRID_TOP_BASE, mcClearanceY + footprint / 2);
+    // A desk's own worst-case (rotated) top edge sits cellSize/2 - footprint/2
+    // above its row's cell-top, i.e. CELL_PADDING/2 -- that term already
+    // scales with footprint via cellSize, so it must NOT also be added here
+    // (adding footprint/2 again, as before, double-counted the same safety
+    // margin and pushed large desk types far below MC for no reason).
+    var podiumBottomY = SCREEN_TOP_Y + MC_OFFSET_Y + MC_DESK_OFFSET_Y + 25;
+    var DESK_MC_GAP = 55; // ~ the same breathing room as 事務局机-事務局 below
+    var gridTop = Math.max(GRID_TOP_BASE, podiumBottomY + DESK_MC_GAP - CELL_PADDING / 2);
 
     // Row count is fully determined by maxCols + deskCount (see
     // computeRowSizes), so there's nothing left for the caller to choose.
