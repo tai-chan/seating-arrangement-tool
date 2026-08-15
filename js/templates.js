@@ -22,6 +22,7 @@ window.SeatApp = window.SeatApp || {};
   var SECRETARIAT_ROW_H = 110;
   var MC_OFFSET_X = 170;
   var MC_OFFSET_Y = 70;
+  var MC_DESK_OFFSET_Y = 70;
 
   // Angle (degrees, Fabric's clockwise convention) that points a table's
   // local "up" direction (its front / short-edge midpoint) at (tx, ty).
@@ -31,21 +32,33 @@ window.SeatApp = window.SeatApp || {};
     return Math.atan2(dx, -dy) * 180 / Math.PI;
   }
 
-  // Row sizes fanning out from the screen: a full row of maxCols, then a
-  // row one short (centered in the gap), alternating, until deskCount is
-  // used up. e.g. maxCols=2, deskCount=5 -> [2, 1, 2].
+  // Uses the fewest rows possible (ceil(deskCount/maxCols)) so the block
+  // stays packed toward the screen rather than trailing further back than
+  // it needs to. Any row that can't be filled evenly gets its shortfall
+  // pulled from the middle first — front row, then back row, then inward —
+  // so a leftover reads as a symmetric taper (e.g. maxCols=2, count=5 ->
+  // [2, 1, 2]) instead of a lopsided last row.
   function computeRowSizes(maxCols, deskCount) {
-    var rows = [];
-    var remaining = deskCount;
-    var idx = 0;
-    while (remaining > 0) {
-      var target = (idx % 2 === 0) ? maxCols : Math.max(1, maxCols - 1);
-      var rowSize = Math.min(target, remaining);
-      rows.push(rowSize);
-      remaining -= rowSize;
-      idx++;
+    var rows = Math.max(1, Math.ceil(deskCount / maxCols));
+    if (rows === 1) return [deskCount];
+
+    var base = Math.floor(deskCount / rows);
+    var remainder = deskCount - base * rows;
+    var rowSizes = [];
+    for (var r = 0; r < rows; r++) rowSizes.push(base);
+
+    var order = [];
+    for (var i = 0; i < rows; i++) {
+      order.push(i % 2 === 0 ? i / 2 : rows - 1 - (i - 1) / 2);
     }
-    return rows;
+    for (var oi = 0; oi < order.length && remainder > 0; oi++) {
+      var idx = order[oi];
+      if (rowSizes[idx] < maxCols) {
+        rowSizes[idx]++;
+        remainder--;
+      }
+    }
+    return rowSizes;
   }
 
   function placeScreens(canvas, canvasWidth, screenCount) {
@@ -108,11 +121,6 @@ window.SeatApp = window.SeatApp || {};
     var width = Math.max(gridWidth, screensWidth) + MARGIN_X * 2;
     var height = GRID_TOP + actualRows * CELL_H + SECRETARIAT_GAP + SECRETARIAT_ROW_H + MARGIN_BOTTOM;
 
-    if (canvas.getObjects().length > 0) {
-      var ok = window.confirm('現在のレイアウトを消去して自動配置します。よろしいですか？');
-      if (!ok) return;
-    }
-
     canvas.clear();
     canvas.backgroundColor = '#ffffff';
     canvas.setWidth(width);
@@ -122,9 +130,11 @@ window.SeatApp = window.SeatApp || {};
     var gridResult = placeDeskGrid(canvas, deskSpec, deskCount, color, screensInfo.target, maxCols);
 
     // MC: diagonally down-left from the (leftmost) screen — the presenter's spot.
+    // MC席 (the podium/desk) sits directly in front of MC, between MC and the room.
     var mcX = Math.max(MARGIN_X, screensInfo.leftmostX - MC_OFFSET_X);
     var mcY = SCREEN_TOP_Y + MC_OFFSET_Y;
     canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'mc', left: mcX, top: mcY }));
+    canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'podium', left: mcX, top: mcY + MC_DESK_OFFSET_Y }));
 
     // 事務局: two desks, centered, at the very back of the room.
     var secY = gridResult.bottomY + SECRETARIAT_GAP;

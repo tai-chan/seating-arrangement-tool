@@ -8,7 +8,7 @@ window.SeatApp = window.SeatApp || {};
     tdesk: 'T字机',
     round: '丸机',
     screen: 'スクリーン',
-    podium: '講師席',
+    podium: 'MC席',
     mc: 'MC',
     secretariat: '事務局'
   };

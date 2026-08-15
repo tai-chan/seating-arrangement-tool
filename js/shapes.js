@@ -262,7 +262,7 @@ window.SeatApp = window.SeatApp || {};
   function buildPodium() {
     var width = 130, height = 50;
     var rect = makeNeutralRect(width, height);
-    var label = makeLabelText('講師席', 0, 0);
+    var label = makeLabelText('MC席', 0, 0);
     var group = new fabric.Group([rect, label], { originX: 'center', originY: 'center' });
     group.furnitureType = 'podium';
     group.category = 'label-only';
@@ -272,7 +272,7 @@ window.SeatApp = window.SeatApp || {};
   // A simple person pictogram (head + body) for MC — the person who stands
   // and speaks at the front of the room.
   function buildMC() {
-    var bodyWidth = 72, bodyHeight = 56, headR = 24, headOverlap = 10;
+    var bodyWidth = 54, bodyHeight = 42, headR = 18, headOverlap = 7;
     var bodyTop = -bodyHeight / 2;
     var headCenterY = bodyTop - headR + headOverlap;
     var headTopY = headCenterY - headR;
@@ -298,7 +298,7 @@ window.SeatApp = window.SeatApp || {};
       selectable: false,
       evented: false
     });
-    var label = makeLabelText('MC', 0, headTopY - 16, { fontWeight: 'bold', fontSize: 16 });
+    var label = makeLabelText('MC', 0, headTopY - 14, { fontWeight: 'bold', fontSize: 13 });
 
     var group = new fabric.Group([body, head, label], { originX: 'center', originY: 'center' });
     group.furnitureType = 'mc';
@@ -309,12 +309,12 @@ window.SeatApp = window.SeatApp || {};
   // 事務局: two long desks lined up side by side (operations staff sit at a
   // desk — unlike MC, who stands, so this isn't a person pictogram).
   function buildSecretariat() {
-    var deskW = 110, deskH = 46, gap = 16;
+    var deskW = 88, deskH = 36, gap = 12;
     var totalW = deskW * 2 + gap;
 
     var d1 = makeNeutralRect(deskW, deskH, -totalW / 2 + deskW / 2, 0, SECRETARIAT_FILL);
     var d2 = makeNeutralRect(deskW, deskH, totalW / 2 - deskW / 2, 0, SECRETARIAT_FILL);
-    var label = makeLabelText('事務局', 0, deskH / 2 + 16, { fontWeight: 'bold' });
+    var label = makeLabelText('事務局', 0, deskH / 2 + 14, { fontWeight: 'bold', fontSize: 12 });
 
     var group = new fabric.Group([d1, d2, label], { originX: 'center', originY: 'center' });
     group.furnitureType = 'secretariat';
