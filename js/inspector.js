@@ -10,7 +10,8 @@ window.SeatApp = window.SeatApp || {};
     screen: 'スクリーン',
     podium: 'MC席',
     mc: 'MC',
-    secretariat: '事務局'
+    'secretariat-desk': '事務局机',
+    'secretariat-person': '事務局'
   };
 
   var containerEl = null;
@@ -33,18 +34,43 @@ window.SeatApp = window.SeatApp || {};
     return node;
   }
 
+  function currentLabelText(group) {
+    var tl = group.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
+    return tl ? tl.text : '';
+  }
+
+  // Rebuilding a table (seat count/color change) replaces the whole group,
+  // so its label would otherwise reset to blank — carry over whatever text
+  // was there (auto-assigned or manually edited) instead of re-running
+  // relabelAll, which would also renumber every other table on the canvas.
   function rebuildInPlace(canvas, group, patch) {
     var spec = window.SeatApp.shapes.toSpec(group);
+    var label = currentLabelText(group);
     for (var k in patch) {
       if (Object.prototype.hasOwnProperty.call(patch, k)) spec[k] = patch[k];
     }
     var newGroup = window.SeatApp.shapes.buildFurniture(spec);
+    var newLabel = newGroup.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
+    if (newLabel) newLabel.set('text', label);
     canvas.remove(group);
     canvas.add(newGroup);
     canvas.setActiveObject(newGroup);
-    window.SeatApp.labeling.relabelAll(canvas);
     canvas.requestRenderAll();
     render(canvas, newGroup);
+  }
+
+  function labelInput(canvas, group) {
+    return el('input', {
+      type: 'text',
+      class: 'label-input',
+      value: currentLabelText(group),
+      maxlength: '6',
+      oninput: function (e) {
+        var tl = group.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
+        if (tl) tl.set('text', e.target.value);
+        canvas.requestRenderAll();
+      }
+    });
   }
 
   function colorSwatches(canvas, group) {
@@ -130,11 +156,15 @@ window.SeatApp = window.SeatApp || {};
     if (title) title.textContent = TYPE_LABELS[group.furnitureType] || '';
 
     if (group.furnitureType === 'idesk') {
+      containerEl.appendChild(el('div', { class: 'field-label', text: 'ラベル' }));
+      containerEl.appendChild(labelInput(canvas, group));
       containerEl.appendChild(el('div', { class: 'field-label', text: '座席パターン' }));
       containerEl.appendChild(toggle22_33(canvas, group));
       containerEl.appendChild(el('div', { class: 'field-label', text: 'テーブルクロスの色' }));
       containerEl.appendChild(colorSwatches(canvas, group));
     } else if (group.furnitureType === 'tdesk') {
+      containerEl.appendChild(el('div', { class: 'field-label', text: 'ラベル' }));
+      containerEl.appendChild(labelInput(canvas, group));
       containerEl.appendChild(el('div', { class: 'field-label', text: '幹の座席パターン' }));
       containerEl.appendChild(toggle22_33(canvas, group));
       containerEl.appendChild(el('div', { class: 'field-label', text: '土台の座席数（1〜6）' }));
@@ -142,6 +172,8 @@ window.SeatApp = window.SeatApp || {};
       containerEl.appendChild(el('div', { class: 'field-label', text: 'テーブルクロスの色' }));
       containerEl.appendChild(colorSwatches(canvas, group));
     } else if (group.furnitureType === 'round') {
+      containerEl.appendChild(el('div', { class: 'field-label', text: 'ラベル' }));
+      containerEl.appendChild(labelInput(canvas, group));
       containerEl.appendChild(el('div', { class: 'field-label', text: '座席数（1〜12）' }));
       containerEl.appendChild(stepper(canvas, group, 'seatCount', 1, 12));
       containerEl.appendChild(el('div', { class: 'field-label', text: 'テーブルクロスの色' }));

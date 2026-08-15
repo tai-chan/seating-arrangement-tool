@@ -51,8 +51,7 @@ window.SeatApp = window.SeatApp || {};
       deskTypeKey: deskTypeKey,
       maxCols: maxCols,
       maxRows: maxRows,
-      deskCount: deskCount,
-      color: 'blue'
+      deskCount: deskCount
     });
   }
 

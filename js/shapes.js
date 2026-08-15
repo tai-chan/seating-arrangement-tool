@@ -15,6 +15,7 @@ window.SeatApp = window.SeatApp || {};
   var SEAT_STROKE = '#5f6b7a';
   var DESK_STROKE = '#33475b';
   var MC_FILL = '#6c3fa8';
+  var SECRETARIAT_PERSON_FILL = '#2f7a63';
   var SECRETARIAT_FILL = '#5c7080';
 
   var SEAT_R = 13;
@@ -269,9 +270,9 @@ window.SeatApp = window.SeatApp || {};
     return group;
   }
 
-  // A simple person pictogram (head + body) for MC — the person who stands
-  // and speaks at the front of the room.
-  function buildMC() {
+  // A simple person pictogram (head + body) — used for MC (who stands and
+  // speaks) and for the 事務局 staff member, in a different color.
+  function buildPersonMarker(type, text, fillColor) {
     var bodyWidth = 54, bodyHeight = 42, headR = 18, headOverlap = 7;
     var bodyTop = -bodyHeight / 2;
     var headCenterY = bodyTop - headR + headOverlap;
@@ -284,7 +285,7 @@ window.SeatApp = window.SeatApp || {};
       height: bodyHeight,
       originX: 'center',
       originY: 'center',
-      fill: MC_FILL,
+      fill: fillColor,
       selectable: false,
       evented: false
     });
@@ -294,30 +295,27 @@ window.SeatApp = window.SeatApp || {};
       radius: headR,
       originX: 'center',
       originY: 'center',
-      fill: MC_FILL,
+      fill: fillColor,
       selectable: false,
       evented: false
     });
-    var label = makeLabelText('MC', 0, headTopY - 14, { fontWeight: 'bold', fontSize: 13 });
+    var label = makeLabelText(text, 0, headTopY - 14, { fontWeight: 'bold', fontSize: 13 });
 
     var group = new fabric.Group([body, head, label], { originX: 'center', originY: 'center' });
-    group.furnitureType = 'mc';
+    group.furnitureType = type;
     group.category = 'label-only';
     return group;
   }
 
-  // 事務局: two long desks lined up side by side (operations staff sit at a
-  // desk — unlike MC, who stands, so this isn't a person pictogram).
-  function buildSecretariat() {
-    var deskW = 88, deskH = 36, gap = 12;
-    var totalW = deskW * 2 + gap;
+  // 事務局机: a single desk (operations staff sit at a desk — unlike MC, who
+  // stands, so the person is drawn separately via buildPersonMarker).
+  function buildSecretariatDesk() {
+    var deskW = 100, deskH = 40;
+    var rect = makeNeutralRect(deskW, deskH, 0, 0, SECRETARIAT_FILL);
+    var label = makeLabelText('事務局机', 0, deskH / 2 + 14, { fontWeight: 'bold', fontSize: 12 });
 
-    var d1 = makeNeutralRect(deskW, deskH, -totalW / 2 + deskW / 2, 0, SECRETARIAT_FILL);
-    var d2 = makeNeutralRect(deskW, deskH, totalW / 2 - deskW / 2, 0, SECRETARIAT_FILL);
-    var label = makeLabelText('事務局', 0, deskH / 2 + 14, { fontWeight: 'bold', fontSize: 12 });
-
-    var group = new fabric.Group([d1, d2, label], { originX: 'center', originY: 'center' });
-    group.furnitureType = 'secretariat';
+    var group = new fabric.Group([rect, label], { originX: 'center', originY: 'center' });
+    group.furnitureType = 'secretariat-desk';
     group.category = 'label-only';
     return group;
   }
@@ -330,8 +328,9 @@ window.SeatApp = window.SeatApp || {};
       case 'round': group = buildRoundTable(spec); break;
       case 'screen': group = buildScreen(); break;
       case 'podium': group = buildPodium(); break;
-      case 'mc': group = buildMC(); break;
-      case 'secretariat': group = buildSecretariat(); break;
+      case 'mc': group = buildPersonMarker('mc', 'MC', MC_FILL); break;
+      case 'secretariat-person': group = buildPersonMarker('secretariat-person', '事務局', SECRETARIAT_PERSON_FILL); break;
+      case 'secretariat-desk': group = buildSecretariatDesk(); break;
       default:
         throw new Error('Unknown item type: ' + spec.type);
     }
