@@ -20,8 +20,6 @@ window.SeatApp = window.SeatApp || {};
     } else if (type === 'round') {
       base.seatCount = 6;
       base.color = 'blue';
-    } else if (type === 'secretariat') {
-      base.deskCount = 3;
     }
     return base;
   }
@@ -38,6 +36,21 @@ window.SeatApp = window.SeatApp || {};
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  function runWizard(canvas) {
+    var orientation = document.getElementById('wiz-orientation').value;
+    var screenCount = parseInt(document.getElementById('wiz-screens').value, 10);
+    var deskTypeKey = document.getElementById('wiz-desk-type').value;
+    var deskCount = Math.max(1, parseInt(document.getElementById('wiz-desk-count').value, 10) || 1);
+
+    window.SeatApp.templates.generateAuto(canvas, {
+      orientation: orientation,
+      screenCount: screenCount,
+      deskTypeKey: deskTypeKey,
+      deskCount: deskCount,
+      color: 'blue'
+    });
   }
 
   function init() {
@@ -65,11 +78,8 @@ window.SeatApp = window.SeatApp || {};
       });
     });
 
-    document.getElementById('btn-template-a').addEventListener('click', function () {
-      window.SeatApp.templates.apply(canvas, 'A');
-    });
-    document.getElementById('btn-template-b').addEventListener('click', function () {
-      window.SeatApp.templates.apply(canvas, 'B');
+    document.getElementById('btn-generate').addEventListener('click', function () {
+      runWizard(canvas);
     });
     document.getElementById('btn-relabel').addEventListener('click', function () {
       window.SeatApp.labeling.relabelAll(canvas);

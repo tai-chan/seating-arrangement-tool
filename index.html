@@ -10,16 +10,33 @@
   <header class="topbar">
     <h1>座席配置図作成ツール</h1>
     <div class="topbar-actions">
-      <button id="btn-template-a" class="tpl-btn">テンプレートA（2画面＋事務局）</button>
-      <button id="btn-template-b" class="tpl-btn">テンプレートB（1画面グリッド）</button>
-      <button id="btn-relabel" class="tpl-btn">座席にラベルを振り直す</button>
+      <div class="wizard">
+        <select id="wiz-orientation" title="会場の向き">
+          <option value="landscape">会場: 横長</option>
+          <option value="portrait">会場: 縦長</option>
+        </select>
+        <select id="wiz-screens" title="スクリーンの数">
+          <option value="1">スクリーン1台</option>
+          <option value="2">スクリーン2台</option>
+          <option value="3">スクリーン3台</option>
+        </select>
+        <select id="wiz-desk-type" title="机の形">
+          <option value="idesk2">I字机 2:2</option>
+          <option value="idesk3">I字机 3:3</option>
+          <option value="tdesk">T字机</option>
+          <option value="round">丸机</option>
+        </select>
+        <input id="wiz-desk-count" type="number" min="1" max="30" value="6" title="机の数">
+        <button id="btn-generate" class="tpl-btn tpl-btn-primary">自動配置</button>
+      </div>
+      <button id="btn-relabel" class="tpl-btn">ラベルを振り直す</button>
       <button id="btn-export" class="export-btn">PNG書き出し</button>
     </div>
   </header>
 
   <div class="main">
     <aside class="palette">
-      <h2>家具を配置</h2>
+      <h2>アイテムを配置</h2>
       <button data-type="idesk" data-seats="2">I字机 2:2</button>
       <button data-type="idesk" data-seats="3">I字机 3:3</button>
       <button data-type="tdesk">T字机</button>

@@ -108,7 +108,7 @@ window.SeatApp = window.SeatApp || {};
   function deleteButton(canvas, group) {
     return el('button', {
       class: 'delete-btn',
-      text: 'この家具を削除',
+      text: 'この項目を削除',
       onclick: function () {
         canvas.remove(group);
         canvas.discardActiveObject();
@@ -144,9 +144,6 @@ window.SeatApp = window.SeatApp || {};
       containerEl.appendChild(stepper(canvas, group, 'seatCount', 1, 12));
       containerEl.appendChild(el('div', { class: 'field-label', text: 'テーブルクロスの色' }));
       containerEl.appendChild(colorSwatches(canvas, group));
-    } else if (group.furnitureType === 'secretariat') {
-      containerEl.appendChild(el('div', { class: 'field-label', text: '机の数（1〜6）' }));
-      containerEl.appendChild(stepper(canvas, group, 'deskCount', 1, 6));
     }
 
     containerEl.appendChild(deleteButton(canvas, group));

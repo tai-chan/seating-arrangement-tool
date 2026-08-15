@@ -39,8 +39,34 @@ body {
 
 .topbar-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.wizard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.wizard select,
+.wizard input[type="number"] {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: #fff;
+  color: var(--text);
+}
+
+.wizard input[type="number"] {
+  width: 56px;
 }
 
 .tpl-btn,
@@ -59,6 +85,17 @@ body {
 .tpl-btn:hover,
 .palette button:hover {
   background: #eef2f7;
+}
+
+.tpl-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+
+.tpl-btn-primary:hover {
+  opacity: 0.9;
 }
 
 .export-btn {

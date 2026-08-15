@@ -11,9 +11,10 @@ window.SeatApp = window.SeatApp || {};
   };
   var DEFAULT_TABLE_COLOR = 'blue';
   var NEUTRAL_FILL = '#c9d6e3';
-  var SEAT_FILL = '#fdf1dc';
-  var SEAT_STROKE = '#5b4636';
+  var SEAT_FILL = '#9aa1ab';
+  var SEAT_STROKE = '#5f6b7a';
   var DESK_STROKE = '#33475b';
+  var ICON_FILL = '#1a1a1a';
 
   var SEAT_R = 13;
   var SEAT_GAP = 46;
@@ -21,7 +22,8 @@ window.SeatApp = window.SeatApp || {};
   var SEAT_OFFSET = SEAT_R + 12;
   var END_PADDING = 24;
 
-  function makeSeat(x, y, seatIndexLocal) {
+  // Seats carry no text of their own — a plain circle is enough to convey "one seat".
+  function makeSeatCircle(x, y) {
     var circle = new fabric.Circle({
       left: x,
       top: y,
@@ -30,29 +32,12 @@ window.SeatApp = window.SeatApp || {};
       originY: 'center',
       fill: SEAT_FILL,
       stroke: SEAT_STROKE,
-      strokeWidth: 1.5,
+      strokeWidth: 1,
       selectable: false,
       evented: false
     });
     circle.role = 'seatMarker';
-    circle.seatIndexLocal = seatIndexLocal;
-
-    var label = new fabric.Text('', {
-      left: x,
-      top: y,
-      fontSize: 14,
-      fontFamily: 'sans-serif',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center',
-      fill: '#222',
-      selectable: false,
-      evented: false
-    });
-    label.role = 'seatLabel';
-    label.seatIndexLocal = seatIndexLocal;
-
-    return [circle, label];
+    return circle;
   }
 
   function makeDeskRect(width, height, color, cx, cy) {
@@ -93,6 +78,15 @@ window.SeatApp = window.SeatApp || {};
     return rect;
   }
 
+  function makeDivider(x1, y1, x2, y2) {
+    return new fabric.Line([x1, y1, x2, y2], {
+      stroke: DESK_STROKE,
+      strokeWidth: 1.5,
+      selectable: false,
+      evented: false
+    });
+  }
+
   function makeLabelText(text, cx, cy, opts) {
     var base = {
       left: cx,
@@ -114,28 +108,45 @@ window.SeatApp = window.SeatApp || {};
     return new fabric.Text(text, merged);
   }
 
+  // One alphabet/number label per table, shown centered on the table itself
+  // (not on individual seats — seats only ever convey a count).
+  function makeTableLabel(cx, cy) {
+    var label = makeLabelText('', cx, cy, {
+      fill: '#ffffff',
+      fontWeight: 'bold',
+      fontSize: 18
+    });
+    label.role = 'tableLabel';
+    return label;
+  }
+
+  // Local orientation convention (shared with T-desk): at angle 0 the desk
+  // stands "portrait" and its top short edge is the desk's front — this is
+  // the edge whose midpoint points at a screen/target when auto-arranged
+  // (see SeatApp.templates.angleTowardTarget). Seats run along the long
+  // left/right edges.
   function buildIDesk(spec) {
     var n = spec.seatsPerSide === 3 ? 3 : 2;
     var color = spec.color || DEFAULT_TABLE_COLOR;
-    var usableWidth = n * SEAT_GAP;
-    var deskWidth = usableWidth + END_PADDING;
-    var deskHeight = DESK_DEPTH;
+    var usableLength = n * SEAT_GAP;
+    var deskLength = usableLength + END_PADDING;
+    var deskWidth = DESK_DEPTH;
 
-    var children = [makeDeskRect(deskWidth, deskHeight, color)];
-    var idx = 0;
-    var step = usableWidth / n;
+    // Two long desks pushed together lengthwise: draw the seam across the middle.
+    var children = [
+      makeDeskRect(deskWidth, deskLength, color),
+      makeDivider(-deskWidth / 2, 0, deskWidth / 2, 0),
+      makeTableLabel(0, 0)
+    ];
 
-    // top edge: left -> right
+    var step = usableLength / n;
     for (var i = 0; i < n; i++) {
-      var x = -usableWidth / 2 + step * (i + 0.5);
-      var y = -deskHeight / 2 - SEAT_OFFSET;
-      children.push.apply(children, makeSeat(x, y, idx++));
+      var y = -usableLength / 2 + step * (i + 0.5);
+      children.push(makeSeatCircle(-deskWidth / 2 - SEAT_OFFSET, y));
     }
-    // bottom edge: right -> left (keeps a clockwise perimeter order)
     for (var j = n - 1; j >= 0; j--) {
-      var x2 = -usableWidth / 2 + step * (j + 0.5);
-      var y2 = deskHeight / 2 + SEAT_OFFSET;
-      children.push.apply(children, makeSeat(x2, y2, idx++));
+      var y2 = -usableLength / 2 + step * (j + 0.5);
+      children.push(makeSeatCircle(deskWidth / 2 + SEAT_OFFSET, y2));
     }
 
     var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
@@ -149,29 +160,36 @@ window.SeatApp = window.SeatApp || {};
   function buildTDesk(spec) {
     var seatCount = Math.max(1, Math.min(6, spec.seatCount || 4));
     var color = spec.color || DEFAULT_TABLE_COLOR;
-    var remaining = seatCount - 1;
-    var topN = Math.ceil(remaining / 2);
-    var bottomN = Math.floor(remaining / 2);
-    var slots = Math.max(topN, bottomN, 1);
-    var usableWidth = slots * SEAT_GAP;
-    var deskWidth = usableWidth + END_PADDING;
-    var deskHeight = DESK_DEPTH;
+    var h = DESK_DEPTH;
 
-    var children = [makeDeskRect(deskWidth, deskHeight, color)];
-    var idx = 0;
+    // Stem: a fixed 2-panel section (like half of an I-desk), sticking up.
+    // Bar: a wider single desk along the bottom, matching a real T-shaped table.
+    var stemSeatCount = Math.min(seatCount, 2);
+    var barSeatCount = Math.max(seatCount - 2, 0);
 
-    // head seat on the short (left) edge, then a clockwise sweep: top L->R, bottom R->L
-    children.push.apply(children, makeSeat(-deskWidth / 2 - SEAT_OFFSET, 0, idx++));
+    var stemUsable = 2 * SEAT_GAP;
+    var stemWidth = stemUsable + END_PADDING;
+    var barUsable = Math.max(barSeatCount, 1) * SEAT_GAP;
+    var barWidth = Math.max(barUsable + END_PADDING, stemWidth + SEAT_GAP);
 
-    var topStep = topN > 0 ? usableWidth / topN : 0;
-    for (var i = 0; i < topN; i++) {
-      var x = -usableWidth / 2 + topStep * (i + 0.5);
-      children.push.apply(children, makeSeat(x, -deskHeight / 2 - SEAT_OFFSET, idx++));
+    var children = [
+      makeDeskRect(barWidth, h, color, 0, h / 2),
+      makeDeskRect(stemWidth, h, color, 0, -h / 2),
+      makeDivider(0, -h, 0, 0),
+      makeTableLabel(0, h / 2)
+    ];
+
+    var stemStep = stemUsable / 2;
+    for (var i = 0; i < stemSeatCount; i++) {
+      var x = -stemUsable / 2 + stemStep * (i + 0.5);
+      children.push(makeSeatCircle(x, -h - SEAT_OFFSET));
     }
-    var bottomStep = bottomN > 0 ? usableWidth / bottomN : 0;
-    for (var j = bottomN - 1; j >= 0; j--) {
-      var x2 = -usableWidth / 2 + bottomStep * (j + 0.5);
-      children.push.apply(children, makeSeat(x2, deskHeight / 2 + SEAT_OFFSET, idx++));
+    if (barSeatCount > 0) {
+      var barStep = barUsable / barSeatCount;
+      for (var j = 0; j < barSeatCount; j++) {
+        var x2 = -barUsable / 2 + barStep * (j + 0.5);
+        children.push(makeSeatCircle(x2, h + SEAT_OFFSET));
+      }
     }
 
     var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
@@ -185,7 +203,7 @@ window.SeatApp = window.SeatApp || {};
   function buildRoundTable(spec) {
     var seatCount = Math.max(1, Math.min(12, spec.seatCount || 6));
     var color = spec.color || DEFAULT_TABLE_COLOR;
-    var radius = 30 + seatCount * 4;
+    var radius = 42 + seatCount * 4;
 
     var deskCircle = new fabric.Circle({
       left: 0,
@@ -201,13 +219,13 @@ window.SeatApp = window.SeatApp || {};
     });
     deskCircle.role = 'desk';
 
-    var children = [deskCircle];
+    var children = [deskCircle, makeTableLabel(0, 0)];
     var seatRadius = radius + SEAT_OFFSET;
     for (var i = 0; i < seatCount; i++) {
       var angle = (-90 + i * (360 / seatCount)) * Math.PI / 180;
       var x = seatRadius * Math.cos(angle);
       var y = seatRadius * Math.sin(angle);
-      children.push.apply(children, makeSeat(x, y, i));
+      children.push(makeSeatCircle(x, y));
     }
 
     var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
@@ -238,51 +256,40 @@ window.SeatApp = window.SeatApp || {};
     return group;
   }
 
-  function buildMC() {
-    var width = 90, height = 50;
-    var rect = makeNeutralRect(width, height);
-    var label = makeLabelText('MC', 0, 0);
-    var group = new fabric.Group([rect, label], { originX: 'center', originY: 'center' });
-    group.furnitureType = 'mc';
-    group.category = 'label-only';
-    return group;
-  }
+  // A simple person pictogram (head + body) used for both MC and 事務局 —
+  // these are role markers for an event floor plan, not seating.
+  function buildPersonMarker(type, text) {
+    var bodyWidth = 72, bodyHeight = 56, headR = 24, headOverlap = 10;
+    var bodyTop = -bodyHeight / 2;
+    var headCenterY = bodyTop - headR + headOverlap;
+    var headTopY = headCenterY - headR;
 
-  function buildSecretariat(spec) {
-    var deskCount = Math.max(1, Math.min(6, spec.deskCount || 3));
-    var deskW = 110, deskH = 46, gap = 20, framePadding = 24;
-    var innerWidth = deskCount * deskW + (deskCount - 1) * gap;
-    var frameWidth = innerWidth + framePadding * 2;
-    var frameHeight = deskH + framePadding * 2 + 30;
-
-    var frame = new fabric.Rect({
+    var body = new fabric.Triangle({
       left: 0,
       top: 0,
-      width: frameWidth,
-      height: frameHeight,
+      width: bodyWidth,
+      height: bodyHeight,
       originX: 'center',
       originY: 'center',
-      fill: 'transparent',
-      stroke: DESK_STROKE,
-      strokeWidth: 1.5,
+      fill: ICON_FILL,
       selectable: false,
       evented: false
     });
-    frame.role = 'frame';
+    var head = new fabric.Circle({
+      left: 0,
+      top: headCenterY,
+      radius: headR,
+      originX: 'center',
+      originY: 'center',
+      fill: ICON_FILL,
+      selectable: false,
+      evented: false
+    });
+    var label = makeLabelText(text, 0, headTopY - 16, { fontWeight: 'bold', fontSize: 16 });
 
-    var children = [frame];
-    var startX = -innerWidth / 2 + deskW / 2;
-    var deskY = -frameHeight / 2 + framePadding + deskH / 2;
-    for (var i = 0; i < deskCount; i++) {
-      var x = startX + i * (deskW + gap);
-      children.push(makeNeutralRect(deskW, deskH, x, deskY));
-    }
-    children.push(makeLabelText('事務局', 0, frameHeight / 2 - 16, { fontWeight: 'bold' }));
-
-    var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
-    group.furnitureType = 'secretariat';
+    var group = new fabric.Group([body, head, label], { originX: 'center', originY: 'center' });
+    group.furnitureType = type;
     group.category = 'label-only';
-    group.deskCount = deskCount;
     return group;
   }
 
@@ -294,10 +301,10 @@ window.SeatApp = window.SeatApp || {};
       case 'round': group = buildRoundTable(spec); break;
       case 'screen': group = buildScreen(); break;
       case 'podium': group = buildPodium(); break;
-      case 'mc': group = buildMC(); break;
-      case 'secretariat': group = buildSecretariat(spec); break;
+      case 'mc': group = buildPersonMarker('mc', 'MC'); break;
+      case 'secretariat': group = buildPersonMarker('secretariat', '事務局'); break;
       default:
-        throw new Error('Unknown furniture type: ' + spec.type);
+        throw new Error('Unknown item type: ' + spec.type);
     }
     group.set({
       left: spec.left || 0,
@@ -326,8 +333,6 @@ window.SeatApp = window.SeatApp || {};
     } else if (group.furnitureType === 'tdesk' || group.furnitureType === 'round') {
       spec.seatCount = group.seatCount;
       spec.color = group.tableColor;
-    } else if (group.furnitureType === 'secretariat') {
-      spec.deskCount = group.deskCount;
     }
     return spec;
   }

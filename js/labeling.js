@@ -19,17 +19,19 @@ window.SeatApp = window.SeatApp || {};
   // first table are treated as being in the same visual row.
   var ROW_BAND_PX = 100;
 
+  // Assigns one letter per table (shown once, centered on the table) —
+  // individual seats are never labeled, they only ever convey a count.
   function relabelAll(canvas) {
-    var seatingObjects = canvas.getObjects().filter(function (o) {
+    var tables = canvas.getObjects().filter(function (o) {
       return o.category === 'seating';
     });
 
-    seatingObjects.sort(function (a, b) {
+    tables.sort(function (a, b) {
       return a.getBoundingRect(true).top - b.getBoundingRect(true).top;
     });
 
     var rows = [];
-    seatingObjects.forEach(function (obj) {
+    tables.forEach(function (obj) {
       var top = obj.getBoundingRect(true).top;
       var row = rows[rows.length - 1];
       if (row && (top - row.bandTop) <= ROW_BAND_PX) {
@@ -50,19 +52,13 @@ window.SeatApp = window.SeatApp || {};
       orderedTables = orderedTables.concat(row.items);
     });
 
-    var counter = 0;
-    orderedTables.forEach(function (table) {
-      var seatLabels = table.getObjects()
-        .filter(function (o) { return o.role === 'seatLabel'; })
-        .sort(function (a, b) { return a.seatIndexLocal - b.seatIndexLocal; });
-      seatLabels.forEach(function (labelObj) {
-        labelObj.set('text', letterLabel(counter));
-        counter++;
-      });
+    orderedTables.forEach(function (table, index) {
+      var labelObj = table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
+      if (labelObj) labelObj.set('text', letterLabel(index));
     });
 
     canvas.requestRenderAll();
-    return counter;
+    return orderedTables.length;
   }
 
   window.SeatApp.labeling = {
