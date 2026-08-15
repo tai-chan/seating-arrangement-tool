@@ -18,12 +18,11 @@
         </select>
         <select id="wiz-desk-type" title="机の形">
           <option value="idesk2">I字机 2:2</option>
-          <option value="idesk3">I字机 3:3</option>
+          <option value="idesk3" selected>I字机 3:3</option>
           <option value="tdesk">T字机</option>
           <option value="round">丸机</option>
         </select>
         <label class="wiz-label">横<input id="wiz-max-cols" type="number" min="1" max="10" value="3" title="横に何個"></label>
-        <label class="wiz-label">縦<input id="wiz-max-rows" type="number" min="1" max="10" value="3" title="縦に何個"></label>
         <label class="wiz-label">机の数<input id="wiz-desk-count" type="number" min="1" max="30" value="6" title="机の数"></label>
         <button id="btn-generate" class="tpl-btn tpl-btn-primary">自動配置</button>
       </div>
@@ -46,7 +45,7 @@
       <button data-type="secretariat-desk">事務局机</button>
       <button data-type="secretariat-person">事務局</button>
       <button data-type="text">テキスト</button>
-      <p class="hint">配置後はドラッグで移動、四隅のハンドルで回転・拡大縮小できます。Delete/Backspaceキーで削除。机はダブルクリックでラベルを変更できます。</p>
+      <p class="hint">配置後はドラッグで移動、四隅のハンドルで回転・拡大縮小できます。Delete/Backspaceキーで削除。机はダブルクリックでラベルを変更できます。テキストや各アイテム上の文字はダブルクリックでその場編集できます。</p>
     </aside>
 
     <div class="canvas-wrap">

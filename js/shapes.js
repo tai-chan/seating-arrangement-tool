@@ -264,8 +264,7 @@ window.SeatApp = window.SeatApp || {};
   function buildScreen() {
     var width = 220, height = 40;
     var rect = makeNeutralRect(width, height);
-    var label = makeLabelText('スクリーン', 0, height / 2 + 16);
-    var group = new fabric.Group([rect, label], { originX: 'center', originY: 'center' });
+    var group = new fabric.Group([rect], { originX: 'center', originY: 'center' });
     group.furnitureType = 'screen';
     group.category = 'label-only';
     return group;
@@ -274,20 +273,21 @@ window.SeatApp = window.SeatApp || {};
   function buildPodium() {
     var width = 130, height = 50;
     var rect = makeNeutralRect(width, height);
-    var label = makeLabelText('MC席', 0, 0);
-    var group = new fabric.Group([rect, label], { originX: 'center', originY: 'center' });
+    var group = new fabric.Group([rect], { originX: 'center', originY: 'center' });
     group.furnitureType = 'podium';
     group.category = 'label-only';
     return group;
   }
 
   // A simple person pictogram (head + body) — used for MC (who stands and
-  // speaks) and for the 事務局 staff member, in a different color.
-  function buildPersonMarker(type, text, fillColor) {
+  // speaks) and for the 事務局 staff member, in a different color. The name
+  // above it is a separate text-label item (see buildCompanionLabel) rather
+  // than baked-in text, so it can be double-click edited like any other
+  // text item.
+  function buildPersonMarker(type, fillColor) {
     var bodyWidth = 54, bodyHeight = 42, headR = 18, headOverlap = 7;
     var bodyTop = -bodyHeight / 2;
     var headCenterY = bodyTop - headR + headOverlap;
-    var headTopY = headCenterY - headR;
 
     var body = new fabric.Triangle({
       left: 0,
@@ -310,9 +310,8 @@ window.SeatApp = window.SeatApp || {};
       selectable: false,
       evented: false
     });
-    var label = makeLabelText(text, 0, headTopY - 14, { fontWeight: 'bold', fontSize: 13 });
 
-    var group = new fabric.Group([body, head, label], { originX: 'center', originY: 'center' });
+    var group = new fabric.Group([body, head], { originX: 'center', originY: 'center' });
     group.furnitureType = type;
     group.category = 'label-only';
     return group;
@@ -349,7 +348,13 @@ window.SeatApp = window.SeatApp || {};
       fontSize: 18,
       fontFamily: 'sans-serif',
       fontWeight: 'bold',
-      fill: '#26313f'
+      fill: '#26313f',
+      // Resize/rotate corner handles are hit-tested with a touch-friendly
+      // radius that, on a short label like "MC", covers the entire object —
+      // every click then reads as "grabbed a corner" and click-to-edit can
+      // never fire. These labels don't need drag-resize, so drop the
+      // controls entirely rather than fight the hit-test radius.
+      hasControls: false
     });
     textObj.furnitureType = 'text';
     textObj.category = 'label-only';
@@ -364,8 +369,8 @@ window.SeatApp = window.SeatApp || {};
       case 'round': group = buildRoundTable(spec); break;
       case 'screen': group = buildScreen(); break;
       case 'podium': group = buildPodium(); break;
-      case 'mc': group = buildPersonMarker('mc', 'MC', MC_FILL); break;
-      case 'secretariat-person': group = buildPersonMarker('secretariat-person', '事務局', SECRETARIAT_PERSON_FILL); break;
+      case 'mc': group = buildPersonMarker('mc', MC_FILL); break;
+      case 'secretariat-person': group = buildPersonMarker('secretariat-person', SECRETARIAT_PERSON_FILL); break;
       case 'secretariat-desk': group = buildSecretariatDesk(spec); break;
       case 'text': group = buildTextItem(spec); break;
       default:
@@ -380,6 +385,45 @@ window.SeatApp = window.SeatApp || {};
     });
     group.lockScalingFlip = true;
     return group;
+  }
+
+  // Default caption for the small set of icon-only items that display a
+  // name above them (MC, 事務局, MC席, スクリーン). The caption itself is a
+  // real text-label item (same as the freeform "テキスト" palette item), so
+  // it is independently draggable and double-click editable, instead of
+  // being non-interactive text baked into the icon.
+  var COMPANION_LABELS = {
+    mc: { text: 'MC', dy: -64, bold: true },
+    'secretariat-person': { text: '事務局', dy: -64, bold: true },
+    podium: { text: 'MC席', dy: 0, bold: false },
+    screen: { text: 'スクリーン', dy: 36, bold: false }
+  };
+
+  function buildCompanionLabel(type, left, top) {
+    var def = COMPANION_LABELS[type];
+    if (!def) return null;
+    var label = buildTextItem({ text: def.text });
+    label.set({
+      left: left,
+      top: top + def.dy,
+      originX: 'center',
+      originY: 'center',
+      textAlign: 'center',
+      fontSize: def.bold ? 13 : 14,
+      fontWeight: def.bold ? 'bold' : 'normal',
+      fill: '#333'
+    });
+    return label;
+  }
+
+  // Places an item together with its companion text label (if it has one),
+  // so palette placement / auto-arrange never need to know which types are
+  // label-pairs. Types without a companion label (tables, secretariat desks,
+  // freeform text) just come back as a single-item array.
+  function buildFurnitureItems(spec) {
+    var main = buildFurniture(spec);
+    var label = buildCompanionLabel(spec.type, spec.left || 0, spec.top || 0);
+    return label ? [main, label] : [main];
   }
 
   // Extracts a spec object from a live group, for rebuild-in-place edits.
@@ -438,6 +482,7 @@ window.SeatApp = window.SeatApp || {};
     COLORS: COLORS,
     COLOR_CYCLE: COLOR_CYCLE,
     buildFurniture: buildFurniture,
+    buildFurnitureItems: buildFurnitureItems,
     toSpec: toSpec,
     rebuildWithPatch: rebuildWithPatch
   };

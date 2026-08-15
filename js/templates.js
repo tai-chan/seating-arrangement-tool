@@ -85,7 +85,7 @@ window.SeatApp = window.SeatApp || {};
     for (var i = 0; i < screenCount; i++) {
       var x = startX + i * (SCREEN_W + SCREEN_GAP);
       xs.push(x);
-      canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'screen', left: x, top: SCREEN_TOP_Y }));
+      window.SeatApp.shapes.buildFurnitureItems({ type: 'screen', left: x, top: SCREEN_TOP_Y }).forEach(function (o) { canvas.add(o); });
     }
     var targetX = xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
     return { target: { x: targetX, y: SCREEN_TOP_Y }, leftmostX: Math.min.apply(null, xs) };
@@ -136,7 +136,6 @@ window.SeatApp = window.SeatApp || {};
   // other regardless of rotation.
   function generateAuto(canvas, opts) {
     var maxCols = Math.max(1, opts.maxCols || 3);
-    var maxRows = Math.max(1, opts.maxRows || 3);
     var deskSpec = DESK_TYPE_MAP[opts.deskTypeKey] || DESK_TYPE_MAP.idesk2;
     var deskCount = Math.max(1, opts.deskCount || 1);
     var screenCount = opts.screenCount;
@@ -146,8 +145,10 @@ window.SeatApp = window.SeatApp || {};
     var mcClearanceY = SCREEN_TOP_Y + MC_OFFSET_Y + MC_DESK_OFFSET_Y + 50;
     var gridTop = Math.max(GRID_TOP_BASE, mcClearanceY + footprint / 2);
 
+    // Row count is fully determined by maxCols + deskCount (see
+    // computeRowSizes), so there's nothing left for the caller to choose.
     var rowSizes = computeRowSizes(maxCols, deskCount);
-    var actualRows = Math.max(rowSizes.length, maxRows);
+    var actualRows = rowSizes.length;
     var gridWidth = maxCols * cellSize;
     var screensWidth = screenCount * SCREEN_W + (screenCount - 1) * SCREEN_GAP;
     var width = Math.max(gridWidth, screensWidth) + MARGIN_X * 2;
@@ -170,15 +171,15 @@ window.SeatApp = window.SeatApp || {};
     // MC席 (the podium/desk) sits directly in front of MC, between MC and the room.
     var mcX = Math.max(MARGIN_X, screensInfo.leftmostX - MC_OFFSET_X);
     var mcY = SCREEN_TOP_Y + MC_OFFSET_Y;
-    canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'mc', left: mcX, top: mcY }));
-    canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'podium', left: mcX, top: mcY + MC_DESK_OFFSET_Y }));
+    window.SeatApp.shapes.buildFurnitureItems({ type: 'mc', left: mcX, top: mcY }).forEach(function (o) { canvas.add(o); });
+    window.SeatApp.shapes.buildFurnitureItems({ type: 'podium', left: mcX, top: mcY + MC_DESK_OFFSET_Y }).forEach(function (o) { canvas.add(o); });
 
     // 事務局: one desk per column (matching the desk grid's width), at the
     // very back of the room, with the staff member standing/sitting just
     // behind it (further from the screen).
     var secDeskY = gridResult.bottomY + SECRETARIAT_GAP;
     canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'secretariat-desk', left: width / 2, top: secDeskY, deskCount: maxCols }));
-    canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'secretariat-person', left: width / 2, top: secDeskY + SECRETARIAT_PERSON_OFFSET_Y }));
+    window.SeatApp.shapes.buildFurnitureItems({ type: 'secretariat-person', left: width / 2, top: secDeskY + SECRETARIAT_PERSON_OFFSET_Y }).forEach(function (o) { canvas.add(o); });
 
     window.SeatApp.labeling.relabelAll(canvas);
     canvas.requestRenderAll();

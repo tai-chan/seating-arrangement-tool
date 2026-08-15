@@ -46,14 +46,12 @@ window.SeatApp = window.SeatApp || {};
     var screenCount = parseInt(document.getElementById('wiz-screens').value, 10);
     var deskTypeKey = document.getElementById('wiz-desk-type').value;
     var maxCols = Math.max(1, parseInt(document.getElementById('wiz-max-cols').value, 10) || 1);
-    var maxRows = Math.max(1, parseInt(document.getElementById('wiz-max-rows').value, 10) || 1);
     var deskCount = Math.max(1, parseInt(document.getElementById('wiz-desk-count').value, 10) || 1);
 
     window.SeatApp.templates.generateAuto(canvas, {
       screenCount: screenCount,
       deskTypeKey: deskTypeKey,
       maxCols: maxCols,
-      maxRows: maxRows,
       deskCount: deskCount
     });
     fitCanvasToViewport(canvas);
@@ -108,14 +106,15 @@ window.SeatApp = window.SeatApp || {};
         var type = btn.getAttribute('data-type');
         var seatsAttr = btn.getAttribute('data-seats');
         var spec = defaultSpecFor(type, seatsAttr ? parseInt(seatsAttr, 10) : undefined, placeCounter++);
-        var group = window.SeatApp.shapes.buildFurniture(spec);
-        canvas.add(group);
-        canvas.setActiveObject(group);
+        var items = window.SeatApp.shapes.buildFurnitureItems(spec);
+        items.forEach(function (obj) { canvas.add(obj); });
+        var primary = items[0];
+        canvas.setActiveObject(primary);
         window.SeatApp.labeling.relabelAll(canvas);
         canvas.requestRenderAll();
-        if (type === 'text' && typeof group.enterEditing === 'function') {
-          group.enterEditing();
-          group.selectAll();
+        if (type === 'text' && typeof primary.enterEditing === 'function') {
+          primary.enterEditing();
+          primary.selectAll();
         }
       });
     });
