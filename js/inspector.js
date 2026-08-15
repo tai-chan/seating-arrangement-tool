@@ -48,6 +48,7 @@ window.SeatApp = window.SeatApp || {};
     var newGroup = window.SeatApp.shapes.rebuildWithPatch(canvas, group, patch);
     canvas.requestRenderAll();
     render(canvas, newGroup);
+    if (window.SeatApp.history) window.SeatApp.history.push();
   }
 
   function labelInput(canvas, group) {
@@ -132,6 +133,7 @@ window.SeatApp = window.SeatApp || {};
         window.SeatApp.labeling.relabelAll(canvas);
         canvas.requestRenderAll();
         clearPanel();
+        if (window.SeatApp.history) window.SeatApp.history.push();
       }
     });
   }

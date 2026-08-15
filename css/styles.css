@@ -104,6 +104,12 @@ body {
   background: #eef2f7;
 }
 
+.tpl-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  background: #f8fafc;
+}
+
 .tpl-btn-primary {
   background: var(--accent);
   color: #fff;

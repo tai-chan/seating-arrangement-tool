@@ -26,6 +26,7 @@
         <label class="wiz-label">机の数<input id="wiz-desk-count" type="number" min="1" max="30" value="6" title="机の数"></label>
         <button id="btn-generate" class="tpl-btn tpl-btn-primary">自動配置</button>
       </div>
+      <button id="btn-undo" class="tpl-btn" disabled title="Cmd+Z / Ctrl+Zでも戻せます">元に戻す</button>
       <button id="btn-relabel" class="tpl-btn">ラベルを振り直す</button>
       <button id="btn-recolor" class="tpl-btn">色を振り直す</button>
       <button id="btn-export" class="export-btn">PNG書き出し</button>
@@ -45,7 +46,7 @@
       <button data-type="secretariat-desk">事務局机</button>
       <button data-type="secretariat-person">事務局</button>
       <button data-type="text">テキスト</button>
-      <p class="hint">配置後はドラッグで移動、四隅のハンドルで回転・拡大縮小できます。Delete/Backspaceキーで削除。机はダブルクリックでラベルを変更できます。テキストや各アイテム上の文字はダブルクリックでその場編集できます。</p>
+      <p class="hint">配置後はドラッグで移動、四隅のハンドルで回転・拡大縮小できます。Delete/Backspaceキーで削除。机はダブルクリックでラベルを変更できます。テキストや各アイテム上の文字はダブルクリックでその場編集できます。Cmd+Z / Ctrl+Zまたは「元に戻す」ボタンで操作を取り消せます。</p>
     </aside>
 
     <div class="canvas-wrap">
@@ -60,10 +61,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
-  <script src="js/shapes.js"></script>
-  <script src="js/labeling.js"></script>
-  <script src="js/templates.js"></script>
-  <script src="js/inspector.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/shapes.js?v=20260815"></script>
+  <script src="js/labeling.js?v=20260815"></script>
+  <script src="js/templates.js?v=20260815"></script>
+  <script src="js/inspector.js?v=20260815"></script>
+  <script src="js/app.js?v=20260815"></script>
 </body>
 </html>

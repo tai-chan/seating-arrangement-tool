@@ -23,7 +23,11 @@ window.SeatApp = window.SeatApp || {};
   var MC_OFFSET_X = 170;
   var MC_OFFSET_Y = 70;
   var MC_DESK_OFFSET_Y = 70;
-  var SECRETARIAT_PERSON_OFFSET_Y = 90;
+  // Person marker sits below the desk row; its name-label floats 64px above
+  // its own icon (see shapes.js COMPANION_LABELS), so this offset must clear
+  // both the desk's bottom edge (desk half-height 20) and that label's own
+  // half-height, or the label ends up printed over the desk.
+  var SECRETARIAT_PERSON_OFFSET_Y = 115;
 
   // Angle (degrees, Fabric's clockwise convention) that points a table's
   // local "up" direction (its front / short-edge midpoint) at (tx, ty).
