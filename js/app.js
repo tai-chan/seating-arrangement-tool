@@ -39,15 +39,17 @@ window.SeatApp = window.SeatApp || {};
   }
 
   function runWizard(canvas) {
-    var orientation = document.getElementById('wiz-orientation').value;
     var screenCount = parseInt(document.getElementById('wiz-screens').value, 10);
     var deskTypeKey = document.getElementById('wiz-desk-type').value;
+    var maxCols = Math.max(1, parseInt(document.getElementById('wiz-max-cols').value, 10) || 1);
+    var maxRows = Math.max(1, parseInt(document.getElementById('wiz-max-rows').value, 10) || 1);
     var deskCount = Math.max(1, parseInt(document.getElementById('wiz-desk-count').value, 10) || 1);
 
     window.SeatApp.templates.generateAuto(canvas, {
-      orientation: orientation,
       screenCount: screenCount,
       deskTypeKey: deskTypeKey,
+      maxCols: maxCols,
+      maxRows: maxRows,
       deskCount: deskCount,
       color: 'blue'
     });

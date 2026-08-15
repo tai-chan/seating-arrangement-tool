@@ -14,7 +14,8 @@ window.SeatApp = window.SeatApp || {};
   var SEAT_FILL = '#9aa1ab';
   var SEAT_STROKE = '#5f6b7a';
   var DESK_STROKE = '#33475b';
-  var ICON_FILL = '#1a1a1a';
+  var MC_FILL = '#6c3fa8';
+  var SECRETARIAT_FILL = '#5c7080';
 
   var SEAT_R = 13;
   var SEAT_GAP = 46;
@@ -60,7 +61,7 @@ window.SeatApp = window.SeatApp || {};
     return rect;
   }
 
-  function makeNeutralRect(width, height, cx, cy) {
+  function makeNeutralRect(width, height, cx, cy, fillColor) {
     var rect = new fabric.Rect({
       left: cx || 0,
       top: cy || 0,
@@ -68,7 +69,7 @@ window.SeatApp = window.SeatApp || {};
       height: height,
       originX: 'center',
       originY: 'center',
-      fill: NEUTRAL_FILL,
+      fill: fillColor || NEUTRAL_FILL,
       stroke: DESK_STROKE,
       strokeWidth: 1.5,
       selectable: false,
@@ -120,22 +121,28 @@ window.SeatApp = window.SeatApp || {};
     return label;
   }
 
+  // A single joined-desk panel is DESK_DEPTH wide. I-desk and T-desk's stem
+  // are both "two such panels pushed together along their long edge", which
+  // is why both always render at a fixed 2*DESK_DEPTH width regardless of
+  // seat count — only the length (how far the seam runs) scales with seats.
+  var PANEL_WIDTH = DESK_DEPTH;
+
   // Local orientation convention (shared with T-desk): at angle 0 the desk
   // stands "portrait" and its top short edge is the desk's front — this is
   // the edge whose midpoint points at a screen/target when auto-arranged
   // (see SeatApp.templates.angleTowardTarget). Seats run along the long
-  // left/right edges.
+  // outer left/right edges of the two joined panels.
   function buildIDesk(spec) {
     var n = spec.seatsPerSide === 3 ? 3 : 2;
     var color = spec.color || DEFAULT_TABLE_COLOR;
+    var deskWidth = PANEL_WIDTH * 2;
     var usableLength = n * SEAT_GAP;
     var deskLength = usableLength + END_PADDING;
-    var deskWidth = DESK_DEPTH;
 
-    // Two long desks pushed together lengthwise: draw the seam across the middle.
+    // Two long desks pushed together along their long edge: seam runs down the middle.
     var children = [
       makeDeskRect(deskWidth, deskLength, color),
-      makeDivider(-deskWidth / 2, 0, deskWidth / 2, 0),
+      makeDivider(0, -deskLength / 2, 0, deskLength / 2),
       makeTableLabel(0, 0)
     ];
 
@@ -162,13 +169,12 @@ window.SeatApp = window.SeatApp || {};
     var color = spec.color || DEFAULT_TABLE_COLOR;
     var h = DESK_DEPTH;
 
-    // Stem: a fixed 2-panel section (like half of an I-desk), sticking up.
+    // Stem: two joined panels (same width convention as the I-desk), sticking up.
     // Bar: a wider single desk along the bottom, matching a real T-shaped table.
     var stemSeatCount = Math.min(seatCount, 2);
     var barSeatCount = Math.max(seatCount - 2, 0);
 
-    var stemUsable = 2 * SEAT_GAP;
-    var stemWidth = stemUsable + END_PADDING;
+    var stemWidth = PANEL_WIDTH * 2;
     var barUsable = Math.max(barSeatCount, 1) * SEAT_GAP;
     var barWidth = Math.max(barUsable + END_PADDING, stemWidth + SEAT_GAP);
 
@@ -179,6 +185,7 @@ window.SeatApp = window.SeatApp || {};
       makeTableLabel(0, h / 2)
     ];
 
+    var stemUsable = stemWidth - END_PADDING;
     var stemStep = stemUsable / 2;
     for (var i = 0; i < stemSeatCount; i++) {
       var x = -stemUsable / 2 + stemStep * (i + 0.5);
@@ -256,9 +263,9 @@ window.SeatApp = window.SeatApp || {};
     return group;
   }
 
-  // A simple person pictogram (head + body) used for both MC and 事務局 —
-  // these are role markers for an event floor plan, not seating.
-  function buildPersonMarker(type, text) {
+  // A simple person pictogram (head + body) for MC — the person who stands
+  // and speaks at the front of the room.
+  function buildMC() {
     var bodyWidth = 72, bodyHeight = 56, headR = 24, headOverlap = 10;
     var bodyTop = -bodyHeight / 2;
     var headCenterY = bodyTop - headR + headOverlap;
@@ -271,7 +278,7 @@ window.SeatApp = window.SeatApp || {};
       height: bodyHeight,
       originX: 'center',
       originY: 'center',
-      fill: ICON_FILL,
+      fill: MC_FILL,
       selectable: false,
       evented: false
     });
@@ -281,14 +288,30 @@ window.SeatApp = window.SeatApp || {};
       radius: headR,
       originX: 'center',
       originY: 'center',
-      fill: ICON_FILL,
+      fill: MC_FILL,
       selectable: false,
       evented: false
     });
-    var label = makeLabelText(text, 0, headTopY - 16, { fontWeight: 'bold', fontSize: 16 });
+    var label = makeLabelText('MC', 0, headTopY - 16, { fontWeight: 'bold', fontSize: 16 });
 
     var group = new fabric.Group([body, head, label], { originX: 'center', originY: 'center' });
-    group.furnitureType = type;
+    group.furnitureType = 'mc';
+    group.category = 'label-only';
+    return group;
+  }
+
+  // 事務局: two long desks lined up side by side (operations staff sit at a
+  // desk — unlike MC, who stands, so this isn't a person pictogram).
+  function buildSecretariat() {
+    var deskW = 110, deskH = 46, gap = 16;
+    var totalW = deskW * 2 + gap;
+
+    var d1 = makeNeutralRect(deskW, deskH, -totalW / 2 + deskW / 2, 0, SECRETARIAT_FILL);
+    var d2 = makeNeutralRect(deskW, deskH, totalW / 2 - deskW / 2, 0, SECRETARIAT_FILL);
+    var label = makeLabelText('事務局', 0, deskH / 2 + 16, { fontWeight: 'bold' });
+
+    var group = new fabric.Group([d1, d2, label], { originX: 'center', originY: 'center' });
+    group.furnitureType = 'secretariat';
     group.category = 'label-only';
     return group;
   }
@@ -301,8 +324,8 @@ window.SeatApp = window.SeatApp || {};
       case 'round': group = buildRoundTable(spec); break;
       case 'screen': group = buildScreen(); break;
       case 'podium': group = buildPodium(); break;
-      case 'mc': group = buildPersonMarker('mc', 'MC'); break;
-      case 'secretariat': group = buildPersonMarker('secretariat', '事務局'); break;
+      case 'mc': group = buildMC(); break;
+      case 'secretariat': group = buildSecretariat(); break;
       default:
         throw new Error('Unknown item type: ' + spec.type);
     }

@@ -11,10 +11,6 @@
     <h1>座席配置図作成ツール</h1>
     <div class="topbar-actions">
       <div class="wizard">
-        <select id="wiz-orientation" title="会場の向き">
-          <option value="landscape">会場: 横長</option>
-          <option value="portrait">会場: 縦長</option>
-        </select>
         <select id="wiz-screens" title="スクリーンの数">
           <option value="1">スクリーン1台</option>
           <option value="2">スクリーン2台</option>
@@ -26,7 +22,9 @@
           <option value="tdesk">T字机</option>
           <option value="round">丸机</option>
         </select>
-        <input id="wiz-desk-count" type="number" min="1" max="30" value="6" title="机の数">
+        <label class="wiz-label">横<input id="wiz-max-cols" type="number" min="1" max="10" value="3" title="横に何個"></label>
+        <label class="wiz-label">縦<input id="wiz-max-rows" type="number" min="1" max="10" value="3" title="縦に何個"></label>
+        <label class="wiz-label">机の数<input id="wiz-desk-count" type="number" min="1" max="30" value="6" title="机の数"></label>
         <button id="btn-generate" class="tpl-btn tpl-btn-primary">自動配置</button>
       </div>
       <button id="btn-relabel" class="tpl-btn">ラベルを振り直す</button>
