@@ -135,8 +135,10 @@ window.SeatApp = window.SeatApp || {};
       containerEl.appendChild(el('div', { class: 'field-label', text: 'テーブルクロスの色' }));
       containerEl.appendChild(colorSwatches(canvas, group));
     } else if (group.furnitureType === 'tdesk') {
-      containerEl.appendChild(el('div', { class: 'field-label', text: '座席数（1〜6）' }));
-      containerEl.appendChild(stepper(canvas, group, 'seatCount', 1, 6));
+      containerEl.appendChild(el('div', { class: 'field-label', text: '幹の座席パターン' }));
+      containerEl.appendChild(toggle22_33(canvas, group));
+      containerEl.appendChild(el('div', { class: 'field-label', text: '土台の座席数（1〜6）' }));
+      containerEl.appendChild(stepper(canvas, group, 'barSeatCount', 1, 6));
       containerEl.appendChild(el('div', { class: 'field-label', text: 'テーブルクロスの色' }));
       containerEl.appendChild(colorSwatches(canvas, group));
     } else if (group.furnitureType === 'round') {

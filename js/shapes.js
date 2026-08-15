@@ -164,45 +164,51 @@ window.SeatApp = window.SeatApp || {};
     return group;
   }
 
+  // T-desk = an I-desk-like "stem" (two joined panels, seats on its left/right,
+  // same 2:2 / 3:3 pattern as the I-desk) with a separate "bar" desk attached
+  // below it, seats along the bar's own outer (bottom) edge only.
   function buildTDesk(spec) {
-    var seatCount = Math.max(1, Math.min(6, spec.seatCount || 4));
+    var stemN = spec.seatsPerSide === 3 ? 3 : 2;
+    var barSeatCount = Math.max(1, Math.min(6, spec.barSeatCount || 2));
     var color = spec.color || DEFAULT_TABLE_COLOR;
     var h = DESK_DEPTH;
 
-    // Stem: two joined panels (same width convention as the I-desk), sticking up.
-    // Bar: a wider single desk along the bottom, matching a real T-shaped table.
-    var stemSeatCount = Math.min(seatCount, 2);
-    var barSeatCount = Math.max(seatCount - 2, 0);
-
     var stemWidth = PANEL_WIDTH * 2;
-    var barUsable = Math.max(barSeatCount, 1) * SEAT_GAP;
+    var stemUsableLength = stemN * SEAT_GAP;
+    var stemLength = stemUsableLength + END_PADDING;
+    var stemCenterY = -stemLength / 2;
+
+    var barUsable = barSeatCount * SEAT_GAP;
     var barWidth = Math.max(barUsable + END_PADDING, stemWidth + SEAT_GAP);
 
     var children = [
       makeDeskRect(barWidth, h, color, 0, h / 2),
-      makeDeskRect(stemWidth, h, color, 0, -h / 2),
-      makeDivider(0, -h, 0, 0),
+      makeDeskRect(stemWidth, stemLength, color, 0, stemCenterY),
+      makeDivider(0, -stemLength, 0, 0),
       makeTableLabel(0, h / 2)
     ];
 
-    var stemUsable = stemWidth - END_PADDING;
-    var stemStep = stemUsable / 2;
-    for (var i = 0; i < stemSeatCount; i++) {
-      var x = -stemUsable / 2 + stemStep * (i + 0.5);
-      children.push(makeSeatCircle(x, -h - SEAT_OFFSET));
+    var stemStep = stemUsableLength / stemN;
+    for (var i = 0; i < stemN; i++) {
+      var y = stemCenterY - stemUsableLength / 2 + stemStep * (i + 0.5);
+      children.push(makeSeatCircle(-stemWidth / 2 - SEAT_OFFSET, y));
     }
-    if (barSeatCount > 0) {
-      var barStep = barUsable / barSeatCount;
-      for (var j = 0; j < barSeatCount; j++) {
-        var x2 = -barUsable / 2 + barStep * (j + 0.5);
-        children.push(makeSeatCircle(x2, h + SEAT_OFFSET));
-      }
+    for (var j = stemN - 1; j >= 0; j--) {
+      var y2 = stemCenterY - stemUsableLength / 2 + stemStep * (j + 0.5);
+      children.push(makeSeatCircle(stemWidth / 2 + SEAT_OFFSET, y2));
+    }
+
+    var barStep = barUsable / barSeatCount;
+    for (var k = 0; k < barSeatCount; k++) {
+      var x = -barUsable / 2 + barStep * (k + 0.5);
+      children.push(makeSeatCircle(x, h + SEAT_OFFSET));
     }
 
     var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
     group.furnitureType = 'tdesk';
     group.category = 'seating';
-    group.seatCount = seatCount;
+    group.seatsPerSide = stemN;
+    group.barSeatCount = barSeatCount;
     group.tableColor = color;
     return group;
   }
@@ -353,7 +359,11 @@ window.SeatApp = window.SeatApp || {};
     if (group.furnitureType === 'idesk') {
       spec.seatsPerSide = group.seatsPerSide;
       spec.color = group.tableColor;
-    } else if (group.furnitureType === 'tdesk' || group.furnitureType === 'round') {
+    } else if (group.furnitureType === 'tdesk') {
+      spec.seatsPerSide = group.seatsPerSide;
+      spec.barSeatCount = group.barSeatCount;
+      spec.color = group.tableColor;
+    } else if (group.furnitureType === 'round') {
       spec.seatCount = group.seatCount;
       spec.color = group.tableColor;
     }

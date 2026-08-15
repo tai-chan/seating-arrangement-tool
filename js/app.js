@@ -15,7 +15,8 @@ window.SeatApp = window.SeatApp || {};
       base.seatsPerSide = seats || 2;
       base.color = 'blue';
     } else if (type === 'tdesk') {
-      base.seatCount = 4;
+      base.seatsPerSide = 2;
+      base.barSeatCount = 2;
       base.color = 'blue';
     } else if (type === 'round') {
       base.seatCount = 6;

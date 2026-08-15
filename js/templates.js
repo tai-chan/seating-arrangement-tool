@@ -6,7 +6,7 @@ window.SeatApp = window.SeatApp || {};
   var DESK_TYPE_MAP = {
     idesk2: { type: 'idesk', seatsPerSide: 2 },
     idesk3: { type: 'idesk', seatsPerSide: 3 },
-    tdesk: { type: 'tdesk', seatCount: 4 },
+    tdesk: { type: 'tdesk', seatsPerSide: 2, barSeatCount: 2 },
     round: { type: 'round', seatCount: 6 }
   };
 
@@ -78,8 +78,9 @@ window.SeatApp = window.SeatApp || {};
         var angle = deskSpec.type === 'round' ? 0 : angleTowardTarget(x, yc, target.x, target.y);
 
         var spec = { type: deskSpec.type, left: x, top: yc, angle: angle, color: color };
-        if (deskSpec.type === 'idesk') spec.seatsPerSide = deskSpec.seatsPerSide;
-        if (deskSpec.type === 'tdesk' || deskSpec.type === 'round') spec.seatCount = deskSpec.seatCount;
+        if (deskSpec.type === 'idesk' || deskSpec.type === 'tdesk') spec.seatsPerSide = deskSpec.seatsPerSide;
+        if (deskSpec.type === 'tdesk') spec.barSeatCount = deskSpec.barSeatCount;
+        if (deskSpec.type === 'round') spec.seatCount = deskSpec.seatCount;
 
         canvas.add(window.SeatApp.shapes.buildFurniture(spec));
       }
