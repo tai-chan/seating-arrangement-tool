@@ -1,0 +1,219 @@
+:root {
+  --color-red: #d9534f;
+  --color-blue: #4a7fd6;
+  --color-green: #4caf6e;
+  --color-yellow: #e0c341;
+  --bg: #f4f6f9;
+  --panel-bg: #ffffff;
+  --border: #d5dbe3;
+  --text: #26313f;
+  --accent: #33475b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tpl-btn,
+.export-btn,
+.palette button,
+.delete-btn {
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tpl-btn:hover,
+.palette button:hover {
+  background: #eef2f7;
+}
+
+.export-btn {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+
+.export-btn:hover {
+  opacity: 0.9;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 200px 1fr 240px;
+  gap: 16px;
+  padding: 16px;
+  align-items: start;
+}
+
+.palette {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.palette h2 {
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+
+.palette .hint {
+  font-size: 11px;
+  color: #6b7686;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.canvas-wrap {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+}
+
+#seat-canvas {
+  display: block;
+}
+
+.inspector {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 200px;
+}
+
+.inspector h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.inspector .empty-msg {
+  display: none;
+  font-size: 12px;
+  color: #6b7686;
+  line-height: 1.6;
+}
+
+.inspector.empty .empty-msg {
+  display: block;
+}
+
+.field-label {
+  font-size: 12px;
+  color: #6b7686;
+  margin: 12px 0 6px;
+}
+
+.field-label:first-child {
+  margin-top: 0;
+}
+
+.toggle-row,
+.swatch-row,
+.stepper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toggle-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toggle-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.swatch-red { background: var(--color-red); }
+.swatch-blue { background: var(--color-blue); }
+.swatch-green { background: var(--color-green); }
+.swatch-yellow { background: var(--color-yellow); }
+
+.swatch.active {
+  border-color: var(--accent);
+}
+
+.stepper-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.stepper-value {
+  min-width: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.delete-btn {
+  margin-top: 16px;
+  width: 100%;
+  color: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.delete-btn:hover {
+  background: #fdecea;
+}

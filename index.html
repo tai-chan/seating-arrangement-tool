@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>座席配置図作成ツール</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>座席配置図作成ツール</h1>
+    <div class="topbar-actions">
+      <button id="btn-template-a" class="tpl-btn">テンプレートA（2画面＋事務局）</button>
+      <button id="btn-template-b" class="tpl-btn">テンプレートB（1画面グリッド）</button>
+      <button id="btn-relabel" class="tpl-btn">座席にラベルを振り直す</button>
+      <button id="btn-export" class="export-btn">PNG書き出し</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="palette">
+      <h2>家具を配置</h2>
+      <button data-type="idesk" data-seats="2">I字机 2:2</button>
+      <button data-type="idesk" data-seats="3">I字机 3:3</button>
+      <button data-type="tdesk">T字机</button>
+      <button data-type="round">丸机</button>
+      <button data-type="screen">スクリーン</button>
+      <button data-type="podium">講師席</button>
+      <button data-type="mc">MC</button>
+      <button data-type="secretariat">事務局</button>
+      <p class="hint">配置後はドラッグで移動、四隅のハンドルで回転・拡大縮小できます。Delete/Backspaceキーで削除。</p>
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="seat-canvas" width="1200" height="900"></canvas>
+    </div>
+
+    <aside id="inspector" class="inspector empty">
+      <h2 id="inspector-title"></h2>
+      <div id="inspector-body"></div>
+      <p class="empty-msg">机やスクリーンをクリックすると、ここに詳細設定が表示されます。</p>
+    </aside>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+  <script src="js/shapes.js"></script>
+  <script src="js/labeling.js"></script>
+  <script src="js/templates.js"></script>
+  <script src="js/inspector.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
