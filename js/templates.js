@@ -4,13 +4,11 @@ window.SeatApp = window.SeatApp || {};
   'use strict';
 
   var DESK_TYPE_MAP = {
-    idesk2: { type: 'idesk', seatsPerSide: 2 },
-    idesk3: { type: 'idesk', seatsPerSide: 3 },
+    idesk2: { type: 'idesk', seatCount: 4 },
+    idesk3: { type: 'idesk', seatCount: 6 },
     tdesk: { type: 'tdesk', seatsPerSide: 2, barSeatCount: 2 },
     round: { type: 'round', seatCount: 6 }
   };
-
-  var COLOR_CYCLE = ['red', 'blue', 'green', 'yellow'];
 
   var SCREEN_W = 220;
   var SCREEN_GAP = 40;
@@ -112,12 +110,15 @@ window.SeatApp = window.SeatApp || {};
         var x = rowStartX + c * cellSize + cellSize / 2;
         var yc = y + cellSize / 2;
         var angle = deskSpec.type === 'round' ? 0 : angleTowardTarget(x, yc, target.x, target.y);
-        var color = COLOR_CYCLE[(rowIndex + c + colOffset) % 4];
+        var cycle = window.SeatApp.shapes.COLOR_CYCLE;
+        var color = cycle[(rowIndex + c + colOffset) % cycle.length];
 
         var spec = { type: deskSpec.type, left: x, top: yc, angle: angle, color: color };
-        if (deskSpec.type === 'idesk' || deskSpec.type === 'tdesk') spec.seatsPerSide = deskSpec.seatsPerSide;
-        if (deskSpec.type === 'tdesk') spec.barSeatCount = deskSpec.barSeatCount;
-        if (deskSpec.type === 'round') spec.seatCount = deskSpec.seatCount;
+        if (deskSpec.type === 'idesk' || deskSpec.type === 'round') spec.seatCount = deskSpec.seatCount;
+        if (deskSpec.type === 'tdesk') {
+          spec.seatsPerSide = deskSpec.seatsPerSide;
+          spec.barSeatCount = deskSpec.barSeatCount;
+        }
 
         canvas.add(window.SeatApp.shapes.buildFurniture(spec));
       }
@@ -154,6 +155,11 @@ window.SeatApp = window.SeatApp || {};
 
     canvas.clear();
     canvas.backgroundColor = '#ffffff';
+    // Reset zoom before sizing: setWidth/setHeight take raw content pixels,
+    // but a previous fit-to-viewport call may have left zoom < 1, which
+    // would otherwise make this fresh layout render at the old shrink
+    // factor. app.js re-fits to the viewport right after this call.
+    canvas.setZoom(1);
     canvas.setWidth(width);
     canvas.setHeight(height);
 
@@ -167,10 +173,11 @@ window.SeatApp = window.SeatApp || {};
     canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'mc', left: mcX, top: mcY }));
     canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'podium', left: mcX, top: mcY + MC_DESK_OFFSET_Y }));
 
-    // 事務局: a desk at the very back of the room, with the staff member
-    // standing/sitting just behind it (further from the screen).
+    // 事務局: one desk per column (matching the desk grid's width), at the
+    // very back of the room, with the staff member standing/sitting just
+    // behind it (further from the screen).
     var secDeskY = gridResult.bottomY + SECRETARIAT_GAP;
-    canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'secretariat-desk', left: width / 2, top: secDeskY }));
+    canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'secretariat-desk', left: width / 2, top: secDeskY, deskCount: maxCols }));
     canvas.add(window.SeatApp.shapes.buildFurniture({ type: 'secretariat-person', left: width / 2, top: secDeskY + SECRETARIAT_PERSON_OFFSET_Y }));
 
     window.SeatApp.labeling.relabelAll(canvas);

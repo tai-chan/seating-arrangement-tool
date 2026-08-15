@@ -12,7 +12,7 @@ window.SeatApp = window.SeatApp || {};
       angle: 0
     };
     if (type === 'idesk') {
-      base.seatsPerSide = seats || 2;
+      base.seatCount = (seats || 3) * 2;
       base.color = 'blue';
     } else if (type === 'tdesk') {
       base.seatsPerSide = 2;
@@ -21,6 +21,8 @@ window.SeatApp = window.SeatApp || {};
     } else if (type === 'round') {
       base.seatCount = 6;
       base.color = 'blue';
+    } else if (type === 'secretariat-desk') {
+      base.deskCount = 1;
     }
     return base;
   }
@@ -30,7 +32,8 @@ window.SeatApp = window.SeatApp || {};
     canvas.discardActiveObject();
     canvas.requestRenderAll();
 
-    var dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
+    var zoom = canvas.getZoom();
+    var dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 / zoom });
     var link = document.createElement('a');
     link.href = dataURL;
     link.download = 'seating-chart.png';
@@ -53,6 +56,39 @@ window.SeatApp = window.SeatApp || {};
       maxRows: maxRows,
       deskCount: deskCount
     });
+    fitCanvasToViewport(canvas);
+  }
+
+  // Shrinks (never enlarges) the canvas's on-screen display so the whole
+  // generated layout fits inside .canvas-wrap without needing to scroll,
+  // regardless of how large the content actually is. Object coordinates are
+  // untouched — only Fabric's view zoom + the canvas element's own pixel
+  // size change, so export can still ask for full-resolution output by
+  // dividing the multiplier by the current zoom (see downloadPNG).
+  function fitCanvasToViewport(canvas) {
+    var wrap = document.querySelector('.canvas-wrap');
+    if (!wrap) return;
+    var zoom = canvas.getZoom();
+    var contentWidth = canvas.getWidth() / zoom;
+    var contentHeight = canvas.getHeight() / zoom;
+    var availW = wrap.clientWidth - 24;
+    var availH = wrap.clientHeight - 24;
+    if (availW <= 0 || availH <= 0) return;
+
+    var scale = Math.min(1, availW / contentWidth, availH / contentHeight);
+    canvas.setZoom(scale);
+    canvas.setWidth(contentWidth * scale);
+    canvas.setHeight(contentHeight * scale);
+    canvas.requestRenderAll();
+  }
+
+  function promptRenameLabel(canvas, table) {
+    var labelObj = table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
+    if (!labelObj) return;
+    var next = window.prompt('ラベルを入力してください', labelObj.text);
+    if (next === null) return;
+    labelObj.set('text', next);
+    canvas.requestRenderAll();
   }
 
   function init() {
@@ -77,6 +113,10 @@ window.SeatApp = window.SeatApp || {};
         canvas.setActiveObject(group);
         window.SeatApp.labeling.relabelAll(canvas);
         canvas.requestRenderAll();
+        if (type === 'text' && typeof group.enterEditing === 'function') {
+          group.enterEditing();
+          group.selectAll();
+        }
       });
     });
 
@@ -86,8 +126,18 @@ window.SeatApp = window.SeatApp || {};
     document.getElementById('btn-relabel').addEventListener('click', function () {
       window.SeatApp.labeling.relabelAll(canvas);
     });
+    document.getElementById('btn-recolor').addEventListener('click', function () {
+      window.SeatApp.labeling.recolorAll(canvas);
+    });
     document.getElementById('btn-export').addEventListener('click', function () {
       downloadPNG(canvas);
+    });
+
+    // Double-click a table to rename its alphabet label directly.
+    canvas.on('mouse:dblclick', function (e) {
+      if (e.target && e.target.category === 'seating') {
+        promptRenameLabel(canvas, e.target);
+      }
     });
 
     document.addEventListener('keydown', function (e) {
@@ -103,6 +153,12 @@ window.SeatApp = window.SeatApp || {};
         }
       }
     });
+
+    window.addEventListener('resize', function () {
+      fitCanvasToViewport(canvas);
+    });
+
+    fitCanvasToViewport(canvas);
   }
 
   document.addEventListener('DOMContentLoaded', init);

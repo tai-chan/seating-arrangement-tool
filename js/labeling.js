@@ -19,9 +19,11 @@ window.SeatApp = window.SeatApp || {};
   // first table are treated as being in the same visual row.
   var ROW_BAND_PX = 100;
 
-  // Assigns one letter per table (shown once, centered on the table) —
-  // individual seats are never labeled, they only ever convey a count.
-  function relabelAll(canvas) {
+  // Groups every seating table into visual rows (top-to-bottom, then
+  // left-to-right within a row) purely from current canvas position — works
+  // for wizard-generated grids and freeform manual layouts alike. Shared by
+  // relabelAll (reading order) and recolorAll (row/column parity).
+  function computeRowGroups(canvas) {
     var tables = canvas.getObjects().filter(function (o) {
       return o.category === 'seating';
     });
@@ -47,10 +49,15 @@ window.SeatApp = window.SeatApp || {};
       });
     });
 
+    return rows.map(function (row) { return row.items; });
+  }
+
+  // Assigns one letter per table (shown once, centered on the table) —
+  // individual seats are never labeled, they only ever convey a count.
+  function relabelAll(canvas) {
+    var rows = computeRowGroups(canvas);
     var orderedTables = [];
-    rows.forEach(function (row) {
-      orderedTables = orderedTables.concat(row.items);
-    });
+    rows.forEach(function (row) { orderedTables = orderedTables.concat(row); });
 
     orderedTables.forEach(function (table, index) {
       var labelObj = table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
@@ -61,8 +68,33 @@ window.SeatApp = window.SeatApp || {};
     return orderedTables.length;
   }
 
+  // Reassigns tablecloth colors so they cycle through all 4 colors and no
+  // two horizontally/vertically neighboring tables share a color
+  // ((row + column) % 4). Round tables, I-desks and T-desks all qualify;
+  // anything without a color (screens, MC, etc.) is left untouched.
+  function recolorAll(canvas) {
+    var rows = computeRowGroups(canvas);
+    var cycle = window.SeatApp.shapes.COLOR_CYCLE;
+    var count = 0;
+
+    rows.forEach(function (row, rowIndex) {
+      row.forEach(function (table, colIndex) {
+        if (table.tableColor === undefined) return;
+        var color = cycle[(rowIndex + colIndex) % cycle.length];
+        if (color !== table.tableColor) {
+          window.SeatApp.shapes.rebuildWithPatch(canvas, table, { color: color });
+        }
+        count++;
+      });
+    });
+
+    canvas.requestRenderAll();
+    return count;
+  }
+
   window.SeatApp.labeling = {
     letterLabel: letterLabel,
-    relabelAll: relabelAll
+    relabelAll: relabelAll,
+    recolorAll: recolorAll
   };
 })();

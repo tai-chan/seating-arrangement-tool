@@ -9,6 +9,7 @@ window.SeatApp = window.SeatApp || {};
     green: '#4caf6e',
     yellow: '#e0c341'
   };
+  var COLOR_CYCLE = ['red', 'blue', 'green', 'yellow'];
   var DEFAULT_TABLE_COLOR = 'blue';
   var NEUTRAL_FILL = '#c9d6e3';
   var SEAT_FILL = '#9aa1ab';
@@ -133,11 +134,18 @@ window.SeatApp = window.SeatApp || {};
   // the edge whose midpoint points at a screen/target when auto-arranged
   // (see SeatApp.templates.angleTowardTarget). Seats run along the long
   // outer left/right edges of the two joined panels.
+  //
+  // seatCount is a total split as evenly as possible between the two
+  // sides (e.g. 5 -> 3 left + 2 right), so a normally-6-seat (3:3) desk can
+  // still be dialed down when fewer people are actually attending.
   function buildIDesk(spec) {
-    var n = spec.seatsPerSide === 3 ? 3 : 2;
+    var seatCount = Math.max(1, Math.min(6, spec.seatCount || 6));
+    var leftN = Math.ceil(seatCount / 2);
+    var rightN = Math.floor(seatCount / 2);
+    var maxN = Math.max(leftN, rightN);
     var color = spec.color || DEFAULT_TABLE_COLOR;
     var deskWidth = PANEL_WIDTH * 2;
-    var usableLength = n * SEAT_GAP;
+    var usableLength = maxN * SEAT_GAP;
     var deskLength = usableLength + END_PADDING;
 
     // Two long desks pushed together along their long edge: seam runs down the middle.
@@ -147,20 +155,23 @@ window.SeatApp = window.SeatApp || {};
       makeTableLabel(0, 0)
     ];
 
-    var step = usableLength / n;
-    for (var i = 0; i < n; i++) {
-      var y = -usableLength / 2 + step * (i + 0.5);
+    var leftStep = usableLength / leftN;
+    for (var i = 0; i < leftN; i++) {
+      var y = -usableLength / 2 + leftStep * (i + 0.5);
       children.push(makeSeatCircle(-deskWidth / 2 - SEAT_OFFSET, y));
     }
-    for (var j = n - 1; j >= 0; j--) {
-      var y2 = -usableLength / 2 + step * (j + 0.5);
-      children.push(makeSeatCircle(deskWidth / 2 + SEAT_OFFSET, y2));
+    if (rightN > 0) {
+      var rightStep = usableLength / rightN;
+      for (var j = rightN - 1; j >= 0; j--) {
+        var y2 = -usableLength / 2 + rightStep * (j + 0.5);
+        children.push(makeSeatCircle(deskWidth / 2 + SEAT_OFFSET, y2));
+      }
     }
 
     var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
     group.furnitureType = 'idesk';
     group.category = 'seating';
-    group.seatsPerSide = n;
+    group.seatCount = seatCount;
     group.tableColor = color;
     return group;
   }
@@ -307,17 +318,42 @@ window.SeatApp = window.SeatApp || {};
     return group;
   }
 
-  // 事務局机: a single desk (operations staff sit at a desk — unlike MC, who
-  // stands, so the person is drawn separately via buildPersonMarker).
-  function buildSecretariatDesk() {
-    var deskW = 100, deskH = 40;
-    var rect = makeNeutralRect(deskW, deskH, 0, 0, SECRETARIAT_FILL);
-    var label = makeLabelText('事務局机', 0, deskH / 2 + 14, { fontWeight: 'bold', fontSize: 12 });
+  // 事務局机: plain desk(s) in a row, no label of its own — the 事務局 person
+  // marker nearby already identifies the area (operations staff sit at a
+  // desk, unlike MC, who stands, so the person is drawn separately via
+  // buildPersonMarker). deskCount lets the wizard line up one per column.
+  function buildSecretariatDesk(spec) {
+    var deskCount = Math.max(1, Math.min(6, spec.deskCount || 1));
+    var deskW = 100, deskH = 40, gap = 14;
+    var totalW = deskCount * deskW + (deskCount - 1) * gap;
+    var startX = -totalW / 2 + deskW / 2;
 
-    var group = new fabric.Group([rect, label], { originX: 'center', originY: 'center' });
+    var children = [];
+    for (var i = 0; i < deskCount; i++) {
+      children.push(makeNeutralRect(deskW, deskH, startX + i * (deskW + gap), 0, SECRETARIAT_FILL));
+    }
+
+    var group = new fabric.Group(children, { originX: 'center', originY: 'center' });
     group.furnitureType = 'secretariat-desk';
     group.category = 'label-only';
+    group.deskCount = deskCount;
     return group;
+  }
+
+  // Free-form text box, like a PowerPoint text box — double-click to edit
+  // its contents directly on the canvas. Not wrapped in a Group, since
+  // Fabric's built-in inline editing needs the object to be a direct
+  // canvas child.
+  function buildTextItem(spec) {
+    var textObj = new fabric.IText(spec.text || 'テキスト', {
+      fontSize: 18,
+      fontFamily: 'sans-serif',
+      fontWeight: 'bold',
+      fill: '#26313f'
+    });
+    textObj.furnitureType = 'text';
+    textObj.category = 'label-only';
+    return textObj;
   }
 
   function buildFurniture(spec) {
@@ -330,7 +366,8 @@ window.SeatApp = window.SeatApp || {};
       case 'podium': group = buildPodium(); break;
       case 'mc': group = buildPersonMarker('mc', 'MC', MC_FILL); break;
       case 'secretariat-person': group = buildPersonMarker('secretariat-person', '事務局', SECRETARIAT_PERSON_FILL); break;
-      case 'secretariat-desk': group = buildSecretariatDesk(); break;
+      case 'secretariat-desk': group = buildSecretariatDesk(spec); break;
+      case 'text': group = buildTextItem(spec); break;
       default:
         throw new Error('Unknown item type: ' + spec.type);
     }
@@ -355,23 +392,53 @@ window.SeatApp = window.SeatApp || {};
       scaleX: group.scaleX,
       scaleY: group.scaleY
     };
-    if (group.furnitureType === 'idesk') {
-      spec.seatsPerSide = group.seatsPerSide;
+    if (group.furnitureType === 'idesk' || group.furnitureType === 'round') {
+      spec.seatCount = group.seatCount;
       spec.color = group.tableColor;
     } else if (group.furnitureType === 'tdesk') {
       spec.seatsPerSide = group.seatsPerSide;
       spec.barSeatCount = group.barSeatCount;
       spec.color = group.tableColor;
-    } else if (group.furnitureType === 'round') {
-      spec.seatCount = group.seatCount;
-      spec.color = group.tableColor;
+    } else if (group.furnitureType === 'secretariat-desk') {
+      spec.deskCount = group.deskCount;
+    } else if (group.furnitureType === 'text') {
+      spec.text = group.text;
     }
     return spec;
   }
 
+  function tableLabelOf(group) {
+    if (!group.getObjects) return null;
+    return group.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0] || null;
+  }
+
+  // Rebuilds a table/item in place with a patched spec, preserving its
+  // current table-label text (a full rebuild would otherwise blank it) and
+  // its selection state. Shared by the inspector's property panel and by
+  // bulk operations like "recolor all".
+  function rebuildWithPatch(canvas, group, patch) {
+    var spec = toSpec(group);
+    var existingLabel = tableLabelOf(group);
+    var labelText = existingLabel ? existingLabel.text : '';
+    for (var k in patch) {
+      if (Object.prototype.hasOwnProperty.call(patch, k)) spec[k] = patch[k];
+    }
+    var newGroup = buildFurniture(spec);
+    var newLabel = tableLabelOf(newGroup);
+    if (newLabel) newLabel.set('text', labelText);
+
+    var wasActive = canvas.getActiveObject() === group;
+    canvas.remove(group);
+    canvas.add(newGroup);
+    if (wasActive) canvas.setActiveObject(newGroup);
+    return newGroup;
+  }
+
   window.SeatApp.shapes = {
     COLORS: COLORS,
+    COLOR_CYCLE: COLOR_CYCLE,
     buildFurniture: buildFurniture,
-    toSpec: toSpec
+    toSpec: toSpec,
+    rebuildWithPatch: rebuildWithPatch
   };
 })();
