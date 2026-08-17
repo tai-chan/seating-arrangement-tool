@@ -117,14 +117,16 @@ window.SeatApp = window.SeatApp || {};
   }
 
   // One alphabet/number label per table, shown centered on the table itself
-  // (not on individual seats — seats only ever convey a count). Sized large
-  // enough to read at a glance while still fitting the smallest desk (the
-  // 1-seat T-desk bar, 46px tall) — see labeling.js for the 2-letter shrink.
+  // (not on individual seats — seats only ever convey a count). Sized as
+  // large as the tightest case allows: the 1-seat T-desk bar is only 48px
+  // tall regardless of desk width, and 34px is the largest size that still
+  // leaves a few px of margin there — see labeling.js for the 2-letter
+  // shrink.
   function makeTableLabel(cx, cy) {
     var label = makeLabelText('', cx, cy, {
       fill: '#ffffff',
       fontWeight: 'bold',
-      fontSize: 24
+      fontSize: 34
     });
     label.role = 'tableLabel';
     return label;

@@ -65,7 +65,7 @@ window.SeatApp = window.SeatApp || {};
         var text = letterLabel(index);
         // 27th table onward needs 2 letters (AA, AB, ...); shrink so it
         // still fits inside the smallest desk instead of overflowing it.
-        labelObj.set({ text: text, fontSize: text.length > 1 ? 18 : 24 });
+        labelObj.set({ text: text, fontSize: text.length > 1 ? 26 : 34 });
       }
     });
 
