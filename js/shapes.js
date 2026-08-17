@@ -25,6 +25,11 @@ window.SeatApp = window.SeatApp || {};
   var SEAT_OFFSET = SEAT_R + 12;
   var END_PADDING = 24;
 
+  // Whether newly-built tables show their seat markers. Toggled globally via
+  // setSeatsVisible() so a dense layout can hide seats for readability
+  // without losing seat counts/positions underneath.
+  var seatsVisible = true;
+
   // Seats carry no text of their own — a plain circle is enough to convey "one seat".
   function makeSeatCircle(x, y) {
     var circle = new fabric.Circle({
@@ -112,12 +117,14 @@ window.SeatApp = window.SeatApp || {};
   }
 
   // One alphabet/number label per table, shown centered on the table itself
-  // (not on individual seats — seats only ever convey a count).
+  // (not on individual seats — seats only ever convey a count). Sized large
+  // enough to read at a glance while still fitting the smallest desk (the
+  // 1-seat T-desk bar, 46px tall) — see labeling.js for the 2-letter shrink.
   function makeTableLabel(cx, cy) {
     var label = makeLabelText('', cx, cy, {
       fill: '#ffffff',
       fontWeight: 'bold',
-      fontSize: 18
+      fontSize: 24
     });
     label.role = 'tableLabel';
     return label;
@@ -317,6 +324,48 @@ window.SeatApp = window.SeatApp || {};
     return group;
   }
 
+  // 入口: a dashed opening in the wall with an arrow pointing into the room,
+  // the standard floor-plan convention for a doorway. Its "入口" caption is a
+  // companion label like MC/事務局/スクリーン (see COMPANION_LABELS below).
+  function buildEntrance() {
+    var width = 90, height = 32;
+    var rect = new fabric.Rect({
+      left: 0,
+      top: 0,
+      width: width,
+      height: height,
+      originX: 'center',
+      originY: 'center',
+      fill: NEUTRAL_FILL,
+      stroke: DESK_STROKE,
+      strokeWidth: 1.5,
+      strokeDashArray: [7, 5],
+      rx: 4,
+      ry: 4,
+      selectable: false,
+      evented: false
+    });
+    rect.role = 'desk';
+
+    var arrow = new fabric.Triangle({
+      left: 0,
+      top: height / 2 + 14,
+      width: 18,
+      height: 14,
+      angle: 180,
+      originX: 'center',
+      originY: 'center',
+      fill: DESK_STROKE,
+      selectable: false,
+      evented: false
+    });
+
+    var group = new fabric.Group([rect, arrow], { originX: 'center', originY: 'center' });
+    group.furnitureType = 'entrance';
+    group.category = 'label-only';
+    return group;
+  }
+
   // 事務局机: plain desk(s) in a row, no label of its own — the 事務局 person
   // marker nearby already identifies the area (operations staff sit at a
   // desk, unlike MC, who stands, so the person is drawn separately via
@@ -361,6 +410,24 @@ window.SeatApp = window.SeatApp || {};
     return textObj;
   }
 
+  function applySeatVisibility(group) {
+    group.getObjects().forEach(function (child) {
+      if (child.role === 'seatMarker') child.set('visible', seatsVisible);
+    });
+  }
+
+  function setSeatsVisible(canvas, visible) {
+    seatsVisible = visible;
+    canvas.getObjects().forEach(function (obj) {
+      if (obj.category === 'seating') applySeatVisibility(obj);
+    });
+    canvas.requestRenderAll();
+  }
+
+  function getSeatsVisible() {
+    return seatsVisible;
+  }
+
   function buildFurniture(spec) {
     var group;
     switch (spec.type) {
@@ -372,10 +439,12 @@ window.SeatApp = window.SeatApp || {};
       case 'mc': group = buildPersonMarker('mc', MC_FILL); break;
       case 'secretariat-person': group = buildPersonMarker('secretariat-person', SECRETARIAT_PERSON_FILL); break;
       case 'secretariat-desk': group = buildSecretariatDesk(spec); break;
+      case 'entrance': group = buildEntrance(); break;
       case 'text': group = buildTextItem(spec); break;
       default:
         throw new Error('Unknown item type: ' + spec.type);
     }
+    if (group.category === 'seating') applySeatVisibility(group);
     group.set({
       left: spec.left || 0,
       top: spec.top || 0,
@@ -396,21 +465,30 @@ window.SeatApp = window.SeatApp || {};
     mc: { text: 'MC', dy: -64, bold: true },
     'secretariat-person': { text: '事務局', dy: -64, bold: true },
     podium: { text: 'MC席', dy: 0, bold: false },
-    screen: { text: 'スクリーン', dy: 36, bold: false }
+    screen: { text: 'スクリーン', dy: 36, bold: false },
+    entrance: { text: '入口', dy: 55, bold: false }
   };
 
-  function buildCompanionLabel(type, left, top) {
-    var def = COMPANION_LABELS[type];
-    if (!def) return null;
-    var label = buildTextItem({ text: def.text });
+  // Most types get a fixed caption from COMPANION_LABELS. 机 (secretariat-desk)
+  // has none by default (a bare desk row needs no caption of its own), but
+  // spec.companionText lets a palette variant — 受付, which is otherwise the
+  // exact same desk row — attach one anyway (see index.html's data-companion
+  // button and app.js's defaultSpecFor).
+  function buildCompanionLabel(spec, left, top) {
+    var def = COMPANION_LABELS[spec.type];
+    var text = spec.companionText || (def && def.text);
+    if (!text) return null;
+    var dy = def ? def.dy : -34;
+    var bold = def ? def.bold : true;
+    var label = buildTextItem({ text: text });
     label.set({
       left: left,
-      top: top + def.dy,
+      top: top + dy,
       originX: 'center',
       originY: 'center',
       textAlign: 'center',
-      fontSize: def.bold ? 13 : 14,
-      fontWeight: def.bold ? 'bold' : 'normal',
+      fontSize: bold ? 13 : 14,
+      fontWeight: bold ? 'bold' : 'normal',
       fill: '#333'
     });
     return label;
@@ -418,11 +496,11 @@ window.SeatApp = window.SeatApp || {};
 
   // Places an item together with its companion text label (if it has one),
   // so palette placement / auto-arrange never need to know which types are
-  // label-pairs. Types without a companion label (tables, secretariat desks,
-  // freeform text) just come back as a single-item array.
+  // label-pairs. Types without a companion label (tables, freeform text)
+  // just come back as a single-item array.
   function buildFurnitureItems(spec) {
     var main = buildFurniture(spec);
-    var label = buildCompanionLabel(spec.type, spec.left || 0, spec.top || 0);
+    var label = buildCompanionLabel(spec, spec.left || 0, spec.top || 0);
     return label ? [main, label] : [main];
   }
 
@@ -484,6 +562,8 @@ window.SeatApp = window.SeatApp || {};
     buildFurniture: buildFurniture,
     buildFurnitureItems: buildFurnitureItems,
     toSpec: toSpec,
-    rebuildWithPatch: rebuildWithPatch
+    rebuildWithPatch: rebuildWithPatch,
+    setSeatsVisible: setSeatsVisible,
+    getSeatsVisible: getSeatsVisible
   };
 })();

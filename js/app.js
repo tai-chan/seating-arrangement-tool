@@ -3,7 +3,7 @@ window.SeatApp = window.SeatApp || {};
 (function () {
   'use strict';
 
-  function defaultSpecFor(type, seats, cascadeIndex) {
+  function defaultSpecFor(type, seats, cascadeIndex, companionText) {
     var cascadeOffset = (cascadeIndex % 6) * 24;
     var base = {
       type: type,
@@ -24,6 +24,7 @@ window.SeatApp = window.SeatApp || {};
     } else if (type === 'secretariat-desk') {
       base.deskCount = 1;
     }
+    if (companionText) base.companionText = companionText;
     return base;
   }
 
@@ -234,7 +235,8 @@ window.SeatApp = window.SeatApp || {};
       btn.addEventListener('click', function () {
         var type = btn.getAttribute('data-type');
         var seatsAttr = btn.getAttribute('data-seats');
-        var spec = defaultSpecFor(type, seatsAttr ? parseInt(seatsAttr, 10) : undefined, placeCounter++);
+        var companionAttr = btn.getAttribute('data-companion');
+        var spec = defaultSpecFor(type, seatsAttr ? parseInt(seatsAttr, 10) : undefined, placeCounter++, companionAttr || undefined);
         var items = window.SeatApp.shapes.buildFurnitureItems(spec);
         items.forEach(function (obj) { canvas.add(obj); });
         var primary = items[0];
@@ -259,6 +261,14 @@ window.SeatApp = window.SeatApp || {};
     });
     document.getElementById('btn-recolor').addEventListener('click', function () {
       window.SeatApp.labeling.recolorAll(canvas);
+      pushHistory(canvas);
+    });
+    var toggleSeatsBtn = document.getElementById('btn-toggle-seats');
+    toggleSeatsBtn.addEventListener('click', function () {
+      var next = !window.SeatApp.shapes.getSeatsVisible();
+      window.SeatApp.shapes.setSeatsVisible(canvas, next);
+      toggleSeatsBtn.textContent = next ? '座席を非表示にする' : '座席を表示する';
+      toggleSeatsBtn.classList.toggle('is-off', !next);
       pushHistory(canvas);
     });
     document.getElementById('btn-export').addEventListener('click', function () {

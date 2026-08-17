@@ -61,7 +61,12 @@ window.SeatApp = window.SeatApp || {};
 
     orderedTables.forEach(function (table, index) {
       var labelObj = table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
-      if (labelObj) labelObj.set('text', letterLabel(index));
+      if (labelObj) {
+        var text = letterLabel(index);
+        // 27th table onward needs 2 letters (AA, AB, ...); shrink so it
+        // still fits inside the smallest desk instead of overflowing it.
+        labelObj.set({ text: text, fontSize: text.length > 1 ? 18 : 24 });
+      }
     });
 
     canvas.requestRenderAll();

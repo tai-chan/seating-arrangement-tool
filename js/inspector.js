@@ -10,8 +10,9 @@ window.SeatApp = window.SeatApp || {};
     screen: 'スクリーン',
     podium: 'MC席',
     mc: 'MC',
-    'secretariat-desk': '事務局机',
+    'secretariat-desk': '机',
     'secretariat-person': '事務局',
+    entrance: '入口',
     text: 'テキスト'
   };
 
