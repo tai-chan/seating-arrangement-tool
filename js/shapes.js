@@ -396,7 +396,7 @@ window.SeatApp = window.SeatApp || {};
   // canvas child.
   function buildTextItem(spec) {
     var textObj = new fabric.IText(spec.text || 'テキスト', {
-      fontSize: 18,
+      fontSize: 24,
       fontFamily: 'sans-serif',
       fontWeight: 'bold',
       fill: '#26313f',
@@ -489,7 +489,7 @@ window.SeatApp = window.SeatApp || {};
       originX: 'center',
       originY: 'center',
       textAlign: 'center',
-      fontSize: bold ? 13 : 14,
+      fontSize: 24,
       fontWeight: bold ? 'bold' : 'normal',
       fill: '#333'
     });
