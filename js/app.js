@@ -255,6 +255,11 @@ window.SeatApp = window.SeatApp || {};
       runWizard(canvas);
       pushHistory(canvas);
     });
+    document.getElementById('btn-office').addEventListener('click', function () {
+      window.SeatApp.templates.generateOffice(canvas);
+      fitCanvasToViewport(canvas);
+      pushHistory(canvas);
+    });
     document.getElementById('btn-relabel').addEventListener('click', function () {
       window.SeatApp.labeling.relabelAll(canvas);
       pushHistory(canvas);

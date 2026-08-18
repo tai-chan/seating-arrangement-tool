@@ -195,9 +195,70 @@ window.SeatApp = window.SeatApp || {};
     canvas.requestRenderAll();
   }
 
+  // Fixed real-room preset: our office's 3列×最大4行の丸机（6人がけ）配置。
+  // Unlike generateAuto (parametric, tablecloth colors auto-cycled), every
+  // table's position/color here is hand-specified to match the actual room,
+  // and the last row's gap (leftmost slot) holds the entrance instead of a
+  // desk -- so this places desks on an explicit column grid (no
+  // computeRowSizes/placeDeskGrid centering) to keep every column aligned
+  // even where a row is short.
+  var OFFICE_MAX_COLS = 3;
+  var OFFICE_ROWS = [
+    ['green', 'blue', 'yellow'],
+    ['yellow', 'yellow', 'red'],
+    ['red', 'blue', 'green'],
+    [null, 'red', 'yellow']
+  ];
+
+  function generateOffice(canvas) {
+    var deskSpec = DESK_TYPE_MAP.round;
+    var footprint = deskFootprint(deskSpec);
+    var cellSize = Math.max(CELL_BASE, footprint + CELL_PADDING);
+
+    var podiumBottomY = SCREEN_TOP_Y + MC_OFFSET_Y + MC_DESK_OFFSET_Y + 25;
+    var DESK_MC_GAP = 55;
+    var gridTop = Math.max(GRID_TOP_BASE, podiumBottomY + DESK_MC_GAP - CELL_PADDING / 2);
+
+    var gridWidth = OFFICE_MAX_COLS * cellSize;
+    var width = Math.max(gridWidth, SCREEN_W) + MARGIN_X * 2;
+    var height = gridTop + OFFICE_ROWS.length * cellSize + MARGIN_BOTTOM;
+
+    canvas.clear();
+    canvas.backgroundColor = '#ffffff';
+    canvas.setZoom(1);
+    canvas.setWidth(width);
+    canvas.setHeight(height);
+
+    var screensInfo = placeScreens(canvas, width, 1);
+
+    OFFICE_ROWS.forEach(function (row, rowIndex) {
+      row.forEach(function (color, colIndex) {
+        var x = MARGIN_X + colIndex * cellSize + cellSize / 2;
+        var y = gridTop + rowIndex * cellSize + cellSize / 2;
+        if (color === null) {
+          window.SeatApp.shapes.buildFurnitureItems({ type: 'entrance', left: x, top: y, angle: 90 })
+            .forEach(function (o) { canvas.add(o); });
+          return;
+        }
+        canvas.add(window.SeatApp.shapes.buildFurniture({
+          type: 'round', left: x, top: y, angle: 0, color: color, seatCount: deskSpec.seatCount
+        }));
+      });
+    });
+
+    var mcX = Math.max(MARGIN_X, screensInfo.leftmostX - MC_OFFSET_X);
+    var mcY = SCREEN_TOP_Y + MC_OFFSET_Y;
+    window.SeatApp.shapes.buildFurnitureItems({ type: 'mc', left: mcX, top: mcY }).forEach(function (o) { canvas.add(o); });
+    window.SeatApp.shapes.buildFurnitureItems({ type: 'podium', left: mcX, top: mcY + MC_DESK_OFFSET_Y }).forEach(function (o) { canvas.add(o); });
+
+    window.SeatApp.labeling.relabelAll(canvas);
+    canvas.requestRenderAll();
+  }
+
   window.SeatApp.templates = {
     angleTowardTarget: angleTowardTarget,
     computeRowSizes: computeRowSizes,
-    generateAuto: generateAuto
+    generateAuto: generateAuto,
+    generateOffice: generateOffice
   };
 })();

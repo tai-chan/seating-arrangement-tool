@@ -124,6 +124,44 @@ window.SeatApp = window.SeatApp || {};
     return wrap;
   }
 
+  // Font size only ever needs to change on the object itself -- unlike a
+  // table's stepper fields, it doesn't affect any other sub-object layout,
+  // so this sets it directly rather than going through
+  // shapes.rebuildWithPatch (which exists for furniture whose whole child
+  // graph, e.g. seats, has to be regenerated).
+  function fontSizeStepper(canvas, group) {
+    var MIN = 10, MAX = 72, STEP = 2;
+    var display;
+    var wrap = el('div', { class: 'stepper' });
+
+    function apply(next) {
+      group.set('fontSize', next);
+      canvas.requestRenderAll();
+      display.textContent = String(next);
+      if (window.SeatApp.history) window.SeatApp.history.push();
+    }
+
+    wrap.appendChild(el('button', {
+      class: 'stepper-btn',
+      text: '−',
+      onclick: function () {
+        var next = Math.max(MIN, group.fontSize - STEP);
+        if (next !== group.fontSize) apply(next);
+      }
+    }));
+    display = el('span', { class: 'stepper-value', text: String(group.fontSize) });
+    wrap.appendChild(display);
+    wrap.appendChild(el('button', {
+      class: 'stepper-btn',
+      text: '＋',
+      onclick: function () {
+        var next = Math.min(MAX, group.fontSize + STEP);
+        if (next !== group.fontSize) apply(next);
+      }
+    }));
+    return wrap;
+  }
+
   function deleteButton(canvas, group) {
     return el('button', {
       class: 'delete-btn',
@@ -175,6 +213,9 @@ window.SeatApp = window.SeatApp || {};
     } else if (group.furnitureType === 'secretariat-desk') {
       containerEl.appendChild(el('div', { class: 'field-label', text: '机の数（1〜6）' }));
       containerEl.appendChild(stepper(canvas, group, 'deskCount', 1, 6));
+    } else if (group.furnitureType === 'text') {
+      containerEl.appendChild(el('div', { class: 'field-label', text: '文字サイズ' }));
+      containerEl.appendChild(fontSizeStepper(canvas, group));
     }
 
     containerEl.appendChild(deleteButton(canvas, group));
