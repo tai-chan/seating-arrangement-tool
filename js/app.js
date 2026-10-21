@@ -29,7 +29,6 @@ window.SeatApp = window.SeatApp || {};
   }
 
   function downloadPNG(canvas) {
-    window.SeatApp.labeling.relabelAll(canvas);
     canvas.discardActiveObject();
     canvas.requestRenderAll();
 
@@ -241,7 +240,7 @@ window.SeatApp = window.SeatApp || {};
         items.forEach(function (obj) { canvas.add(obj); });
         var primary = items[0];
         canvas.setActiveObject(primary);
-        window.SeatApp.labeling.relabelAll(canvas);
+        window.SeatApp.labeling.labelNewTable(canvas, primary);
         canvas.requestRenderAll();
         if (type === 'text' && typeof primary.enterEditing === 'function') {
           primary.enterEditing();
@@ -305,7 +304,6 @@ window.SeatApp = window.SeatApp || {};
         if (active) {
           canvas.remove(active);
           canvas.discardActiveObject();
-          window.SeatApp.labeling.relabelAll(canvas);
           canvas.requestRenderAll();
           pushHistory(canvas);
         }

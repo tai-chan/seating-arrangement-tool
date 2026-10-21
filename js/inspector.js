@@ -169,7 +169,6 @@ window.SeatApp = window.SeatApp || {};
       onclick: function () {
         canvas.remove(group);
         canvas.discardActiveObject();
-        window.SeatApp.labeling.relabelAll(canvas);
         canvas.requestRenderAll();
         clearPanel();
         if (window.SeatApp.history) window.SeatApp.history.push();

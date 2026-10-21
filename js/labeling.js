@@ -62,15 +62,37 @@ window.SeatApp = window.SeatApp || {};
     orderedTables.forEach(function (table, index) {
       var labelObj = table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0];
       if (labelObj) {
-        var text = letterLabel(index);
-        // 27th table onward needs 2 letters (AA, AB, ...); shrink so it
-        // still fits inside the smallest desk instead of overflowing it.
-        labelObj.set({ text: text, fontSize: text.length > 1 ? 26 : 34 });
+        setLabelText(labelObj, letterLabel(index));
       }
     });
 
     canvas.requestRenderAll();
     return orderedTables.length;
+  }
+
+  // 27th table onward needs 2 letters (AA, AB, ...); shrink so it still
+  // fits inside the smallest desk instead of overflowing it.
+  function setLabelText(labelObj, text) {
+    labelObj.set({ text: text, fontSize: text.length > 1 ? 26 : 34 });
+  }
+
+  // Gives only the newly added table a letter (the first one not already
+  // used by another table), leaving every existing label exactly as the
+  // user set it -- including ones they renamed or cleared on purpose.
+  function labelNewTable(canvas, table) {
+    var labelObj = table.getObjects ? table.getObjects().filter(function (o) { return o.role === 'tableLabel'; })[0] : null;
+    if (!labelObj) return;
+    var used = {};
+    canvas.getObjects().forEach(function (o) {
+      if (o === table || o.category !== 'seating' || !o.getObjects) return;
+      o.getObjects().forEach(function (c) {
+        if (c.role === 'tableLabel' && c.text) used[c.text] = true;
+      });
+    });
+    var i = 0;
+    while (used[letterLabel(i)]) i++;
+    setLabelText(labelObj, letterLabel(i));
+    canvas.requestRenderAll();
   }
 
   // Reassigns tablecloth colors so they cycle through all 4 colors and no
@@ -100,6 +122,7 @@ window.SeatApp = window.SeatApp || {};
   window.SeatApp.labeling = {
     letterLabel: letterLabel,
     relabelAll: relabelAll,
+    labelNewTable: labelNewTable,
     recolorAll: recolorAll
   };
 })();
